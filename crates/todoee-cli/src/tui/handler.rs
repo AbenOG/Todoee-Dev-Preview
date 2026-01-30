@@ -4,7 +4,7 @@ use tui_input::backend::crossterm::EventHandler as InputHandler;
 use chrono::TimeZone;
 use todoee_core::Priority;
 
-use super::app::{App, EditField, EditState, Mode, SettingsSection, View};
+use super::app::{App, EditField, EditState, Mode, SettingsSection, SortBy, SortOrder, View};
 use todoee_core::Config;
 
 /// Handle key events and update app state
@@ -122,6 +122,36 @@ async fn handle_todos_view(app: &mut App, key: KeyEvent) -> Result<()> {
                 Some(Priority::Low) => None,
             };
             app.refresh_todos().await?;
+        }
+        KeyCode::Char('s') => {
+            // Cycle sort: Created -> DueDate -> Priority -> Title -> Created
+            app.filter.sort_by = match app.filter.sort_by {
+                SortBy::CreatedAt => SortBy::DueDate,
+                SortBy::DueDate => SortBy::Priority,
+                SortBy::Priority => SortBy::Title,
+                SortBy::Title => SortBy::CreatedAt,
+            };
+            app.refresh_todos().await?;
+            let sort_name = match app.filter.sort_by {
+                SortBy::CreatedAt => "Created",
+                SortBy::DueDate => "Due Date",
+                SortBy::Priority => "Priority",
+                SortBy::Title => "Title",
+            };
+            app.status_message = Some(format!("Sorted by: {}", sort_name));
+        }
+        KeyCode::Char('S') => {
+            // Toggle sort order
+            app.filter.sort_order = match app.filter.sort_order {
+                SortOrder::Ascending => SortOrder::Descending,
+                SortOrder::Descending => SortOrder::Ascending,
+            };
+            app.refresh_todos().await?;
+            let order = match app.filter.sort_order {
+                SortOrder::Ascending => "Ascending",
+                SortOrder::Descending => "Descending",
+            };
+            app.status_message = Some(format!("Sort order: {}", order));
         }
 
         _ => {}

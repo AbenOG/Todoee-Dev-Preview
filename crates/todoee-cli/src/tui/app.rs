@@ -51,6 +51,24 @@ pub enum SettingsSection {
     Database,
 }
 
+/// Sort field for the task list
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum SortBy {
+    #[default]
+    CreatedAt,
+    DueDate,
+    Priority,
+    Title,
+}
+
+/// Sort order for the task list
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum SortOrder {
+    #[default]
+    Ascending,
+    Descending,
+}
+
 /// State for editing a todo with multiple fields
 #[derive(Debug, Clone)]
 pub struct EditState {
@@ -83,6 +101,8 @@ pub struct Filter {
     pub show_completed: bool,
     pub search_query: String,
     pub priority: Option<Priority>,
+    pub sort_by: SortBy,
+    pub sort_order: SortOrder,
 }
 
 /// Application state
@@ -170,6 +190,18 @@ impl App {
         // Apply priority filter
         if let Some(priority) = self.filter.priority {
             self.todos.retain(|t| t.priority == priority);
+        }
+
+        // Sort todos
+        match (self.filter.sort_by, self.filter.sort_order) {
+            (SortBy::CreatedAt, SortOrder::Ascending) => self.todos.sort_by(|a, b| a.created_at.cmp(&b.created_at)),
+            (SortBy::CreatedAt, SortOrder::Descending) => self.todos.sort_by(|a, b| b.created_at.cmp(&a.created_at)),
+            (SortBy::DueDate, SortOrder::Ascending) => self.todos.sort_by(|a, b| a.due_date.cmp(&b.due_date)),
+            (SortBy::DueDate, SortOrder::Descending) => self.todos.sort_by(|a, b| b.due_date.cmp(&a.due_date)),
+            (SortBy::Priority, SortOrder::Ascending) => self.todos.sort_by(|a, b| a.priority.cmp(&b.priority)),
+            (SortBy::Priority, SortOrder::Descending) => self.todos.sort_by(|a, b| b.priority.cmp(&a.priority)),
+            (SortBy::Title, SortOrder::Ascending) => self.todos.sort_by(|a, b| a.title.to_lowercase().cmp(&b.title.to_lowercase())),
+            (SortBy::Title, SortOrder::Descending) => self.todos.sort_by(|a, b| b.title.to_lowercase().cmp(&a.title.to_lowercase())),
         }
 
         // Ensure selected index is valid
