@@ -9,7 +9,7 @@ use chrono::Utc;
 use todoee_core::Priority;
 
 use super::app::{App, Mode};
-use super::widgets::TodoDetailWidget;
+use super::widgets::{TodoDetailWidget, TodoEditorWidget};
 
 /// Main UI rendering function
 pub fn render(app: &App, frame: &mut Frame) {
@@ -39,6 +39,13 @@ pub fn render(app: &App, frame: &mut Frame) {
         if let Some(todo) = app.selected_todo() {
             let area = centered_rect(70, 80, frame.area());
             TodoDetailWidget::new(todo).render(frame, area);
+        }
+    }
+
+    if app.mode == Mode::EditingFull {
+        if let Some(ref state) = app.edit_state {
+            let area = centered_rect(60, 50, frame.area());
+            TodoEditorWidget::new(state).render(frame, area);
         }
     }
 }

@@ -1,8 +1,10 @@
 use anyhow::Result;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use tui_input::backend::crossterm::EventHandler as InputHandler;
+use chrono::TimeZone;
+use todoee_core::Priority;
 
-use super::app::{App, Mode};
+use super::app::{App, EditField, EditState, Mode};
 
 /// Handle key events and update app state
 pub async fn handle_key_event(app: &mut App, key: KeyEvent) -> Result<()> {
@@ -49,9 +51,9 @@ async fn handle_normal_mode(app: &mut App, key: KeyEvent) -> Result<()> {
             app.delete_selected().await?;
         }
         KeyCode::Char('e') => {
-            if let Some(title) = app.selected_todo().map(|t| t.title.clone()) {
-                app.mode = Mode::Editing;
-                app.input = tui_input::Input::new(title);
+            if let Some(todo) = app.selected_todo() {
+                app.edit_state = Some(EditState::from_todo(todo));
+                app.mode = Mode::EditingFull;
             }
         }
 
@@ -190,15 +192,92 @@ fn handle_viewing_detail_mode(app: &mut App, key: KeyEvent) {
     }
 }
 
-#[allow(unused_variables)]
 async fn handle_editing_full_mode(app: &mut App, key: KeyEvent) -> Result<()> {
-    // Placeholder for full edit mode handling - will be implemented in Task 4
+    let Some(ref mut state) = app.edit_state else {
+        app.mode = Mode::Normal;
+        return Ok(());
+    };
+
     match key.code {
         KeyCode::Esc => {
-            app.mode = Mode::Normal;
             app.edit_state = None;
+            app.mode = Mode::Normal;
+        }
+        KeyCode::Tab => {
+            state.active_field = match state.active_field {
+                EditField::Title => EditField::Description,
+                EditField::Description => EditField::Priority,
+                EditField::Priority => EditField::DueDate,
+                EditField::DueDate => EditField::Title,
+            };
+        }
+        KeyCode::BackTab => {
+            state.active_field = match state.active_field {
+                EditField::Title => EditField::DueDate,
+                EditField::Description => EditField::Title,
+                EditField::Priority => EditField::Description,
+                EditField::DueDate => EditField::Priority,
+            };
+        }
+        KeyCode::Enter => {
+            // Save changes
+            let todo_id = state.todo_id;
+            if let Some(todo) = app.todos.iter_mut().find(|t| t.id == todo_id) {
+                todo.title = state.title.clone();
+                todo.description = if state.description.is_empty() { None } else { Some(state.description.clone()) };
+                todo.priority = state.priority;
+                todo.due_date = state.due_date.as_ref().and_then(|s| {
+                    chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d")
+                        .ok()
+                        .and_then(|d| d.and_hms_opt(12, 0, 0))
+                        .map(|dt| chrono::Utc.from_utc_datetime(&dt))
+                });
+                todo.updated_at = chrono::Utc::now();
+                todo.sync_status = todoee_core::SyncStatus::Pending;
+                app.db.update_todo(todo).await?;
+                app.status_message = Some(format!("✓ Updated: {}", todo.title));
+            }
+            app.edit_state = None;
+            app.mode = Mode::Normal;
+            app.refresh_todos().await?;
+        }
+        KeyCode::Char(c) => {
+            match state.active_field {
+                EditField::Title => state.title.push(c),
+                EditField::Description => state.description.push(c),
+                EditField::Priority => {
+                    state.priority = match c {
+                        '1' => Priority::Low,
+                        '2' => Priority::Medium,
+                        '3' => Priority::High,
+                        _ => state.priority,
+                    };
+                }
+                EditField::DueDate => {
+                    let due = state.due_date.get_or_insert_with(String::new);
+                    if c.is_ascii_digit() || c == '-' {
+                        due.push(c);
+                    }
+                }
+            }
+        }
+        KeyCode::Backspace => {
+            match state.active_field {
+                EditField::Title => { state.title.pop(); }
+                EditField::Description => { state.description.pop(); }
+                EditField::Priority => {} // Can't backspace priority
+                EditField::DueDate => {
+                    if let Some(ref mut due) = state.due_date {
+                        due.pop();
+                        if due.is_empty() {
+                            state.due_date = None;
+                        }
+                    }
+                }
+            }
         }
         _ => {}
     }
+
     Ok(())
 }
