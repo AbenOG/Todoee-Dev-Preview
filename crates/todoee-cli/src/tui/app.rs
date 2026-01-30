@@ -41,6 +41,16 @@ pub enum EditField {
     DueDate,
 }
 
+/// Settings panel section
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum SettingsSection {
+    #[default]
+    Ai,
+    Display,
+    Notifications,
+    Database,
+}
+
 /// State for editing a todo with multiple fields
 #[derive(Debug, Clone)]
 pub struct EditState {
@@ -102,6 +112,8 @@ pub struct App {
     pub current_view: View,
     /// Selected category index
     pub category_selected: usize,
+    /// Current settings section
+    pub settings_section: SettingsSection,
 }
 
 impl App {
@@ -125,6 +137,7 @@ impl App {
             edit_state: None,
             current_view: View::default(),
             category_selected: 0,
+            settings_section: SettingsSection::default(),
         };
 
         app.refresh_todos().await?;
