@@ -432,6 +432,7 @@ fn render_help_modal(frame: &mut Frame) {
         Line::from("  Tab         Toggle show completed"),
         Line::from("  c           Cycle category filter"),
         Line::from("  i           View insights"),
+        Line::from("  n           Jump to recommended task"),
         Line::from("  Esc         Close modal/cancel"),
         Line::from("  q           Quit"),
         Line::from(""),

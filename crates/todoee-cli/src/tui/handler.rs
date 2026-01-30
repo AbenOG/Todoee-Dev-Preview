@@ -225,6 +225,18 @@ async fn handle_todos_view(app: &mut App, key: KeyEvent) -> Result<()> {
             app.mode = Mode::Insights;
         }
 
+        // Now recommendation
+        KeyCode::Char('n') => {
+            if let Some(idx) = app.get_now_recommendation() {
+                app.selected = idx;
+                if let Some(todo) = app.selected_todo() {
+                    app.status_message = Some(format!("Recommended: {}", todo.title));
+                }
+            } else {
+                app.status_message = Some("No tasks to recommend".to_string());
+            }
+        }
+
         _ => {}
     }
     Ok(())

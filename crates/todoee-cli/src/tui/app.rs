@@ -856,6 +856,66 @@ impl App {
         Ok(())
     }
 
+    /// Get the recommended "now" todo index based on priority, due date, and time
+    pub fn get_now_recommendation(&self) -> Option<usize> {
+        use chrono::Timelike;
+
+        if self.todos.is_empty() {
+            return None;
+        }
+
+        let now = chrono::Utc::now();
+        let hour = chrono::Local::now().hour();
+
+        // Score each non-completed todo
+        let mut scored: Vec<(usize, i32)> = self
+            .todos
+            .iter()
+            .enumerate()
+            .filter(|(_, t)| !t.is_completed)
+            .map(|(i, t)| {
+                let mut score = 0i32;
+
+                // Priority weight
+                score += match t.priority {
+                    Priority::High => 100,
+                    Priority::Medium => 50,
+                    Priority::Low => 10,
+                };
+
+                // Due date urgency
+                if let Some(due) = t.due_date {
+                    let days_until = (due.date_naive() - now.date_naive()).num_days();
+                    if days_until < 0 {
+                        score += 200; // Overdue = highest priority
+                    } else if days_until == 0 {
+                        score += 150; // Due today
+                    } else if days_until == 1 {
+                        score += 100; // Due tomorrow
+                    } else if days_until <= 3 {
+                        score += 50; // Due soon
+                    }
+                }
+
+                // Time of day heuristics
+                // Morning: prefer high priority
+                // Afternoon: prefer medium tasks
+                // Evening: prefer low priority / quick wins
+                score += match hour {
+                    6..=11 if t.priority == Priority::High => 30,
+                    12..=16 if t.priority == Priority::Medium => 30,
+                    17..=22 if t.priority == Priority::Low => 30,
+                    _ => 0,
+                };
+
+                (i, score)
+            })
+            .collect();
+
+        scored.sort_by(|a, b| b.1.cmp(&a.1));
+        scored.first().map(|(i, _)| *i)
+    }
+
     /// Compute productivity insights
     pub async fn compute_insights(&self) -> Result<InsightsData> {
         let now = chrono::Utc::now();
