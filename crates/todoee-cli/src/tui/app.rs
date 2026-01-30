@@ -401,8 +401,11 @@ impl App {
             return Ok(());
         }
 
+        self.set_loading("Creating category...");
+
         // Check if category exists
         if self.db.get_category_by_name(&name).await?.is_some() {
+            self.clear_loading();
             self.status_message = Some(format!("Category '{}' already exists", name));
             return Ok(());
         }
@@ -410,6 +413,7 @@ impl App {
         let mut category = Category::new(uuid::Uuid::nil(), name.clone());
         category.color = color;
         self.db.create_category(&category).await?;
+        self.clear_loading();
         self.status_message = Some(format!("Created category: {}", name));
         self.refresh_categories().await?;
         Ok(())
@@ -420,7 +424,11 @@ impl App {
         if let Some(cat) = self.categories.get(self.category_selected) {
             let name = cat.name.clone();
             let id = cat.id;
+
+            self.set_loading("Deleting category...");
             self.db.delete_category(id).await?;
+            self.clear_loading();
+
             self.status_message = Some(format!("Deleted category: {}", name));
             self.refresh_categories().await?;
             if self.category_selected >= self.categories.len() && !self.categories.is_empty() {
