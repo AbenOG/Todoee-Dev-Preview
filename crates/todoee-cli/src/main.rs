@@ -92,6 +92,12 @@ enum Commands {
         #[arg(long)]
         init: bool,
     },
+
+    /// Undo the last operation
+    Undo,
+
+    /// Redo the last undone operation
+    Redo,
 }
 
 #[tokio::main]
@@ -139,6 +145,12 @@ async fn main() -> Result<()> {
         }
         Commands::Config { init } => {
             commands::config(init).await?;
+        }
+        Commands::Undo => {
+            commands::undo().await?;
+        }
+        Commands::Redo => {
+            commands::redo().await?;
         }
     }
 
