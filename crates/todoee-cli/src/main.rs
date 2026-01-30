@@ -165,6 +165,12 @@ enum Commands {
         #[command(subcommand)]
         command: commands::stash::StashCommand,
     },
+
+    /// Batch operations on multiple todos
+    Batch {
+        #[command(subcommand)]
+        command: commands::batch::BatchCommand,
+    },
 }
 
 #[tokio::main]
@@ -245,6 +251,9 @@ async fn main() -> Result<()> {
         }
         Commands::Stash { command } => {
             commands::stash::run(command).await?;
+        }
+        Commands::Batch { command } => {
+            commands::batch::run(command).await?;
         }
     }
 
