@@ -229,6 +229,58 @@ pub struct App {
     pub pending_priority: Option<Priority>,
 }
 
+/// Calculate fuzzy match score (higher = better match)
+fn fuzzy_score(query: &str, text: &str) -> Option<i32> {
+    let query = query.to_lowercase();
+    let text_lower = text.to_lowercase();
+
+    // Exact match gets highest score
+    if text_lower.contains(&query) {
+        return Some(1000 + (100 - text.len() as i32).max(0));
+    }
+
+    // Fuzzy matching - all query chars must appear in order
+    let mut score = 0i32;
+    let mut query_idx = 0;
+    let query_chars: Vec<char> = query.chars().collect();
+    let mut consecutive = 0;
+    let mut prev_matched = false;
+
+    for (i, c) in text_lower.chars().enumerate() {
+        if query_idx < query_chars.len() && c == query_chars[query_idx] {
+            score += 10;
+            // Bonus for consecutive matches
+            if prev_matched {
+                consecutive += 1;
+                score += consecutive * 5;
+            } else {
+                consecutive = 0;
+            }
+            // Bonus for matching at word start
+            if i == 0
+                || !text
+                    .chars()
+                    .nth(i.saturating_sub(1))
+                    .map(|p| p.is_alphanumeric())
+                    .unwrap_or(true)
+            {
+                score += 15;
+            }
+            query_idx += 1;
+            prev_matched = true;
+        } else {
+            prev_matched = false;
+            consecutive = 0;
+        }
+    }
+
+    if query_idx == query_chars.len() {
+        Some(score)
+    } else {
+        None
+    }
+}
+
 impl App {
     /// Create a new application instance
     pub async fn new() -> Result<Self> {
@@ -279,11 +331,27 @@ impl App {
             self.db.list_todos(!self.filter.show_completed).await?
         };
 
-        // Apply search filter
+        // Apply search filter with fuzzy matching
         if !self.filter.search_query.is_empty() {
-            let query = self.filter.search_query.to_lowercase();
-            self.todos
-                .retain(|t| t.title.to_lowercase().contains(&query));
+            let query = &self.filter.search_query;
+            // Score and filter todos
+            let mut scored: Vec<_> = self
+                .todos
+                .drain(..)
+                .filter_map(|t| {
+                    let title_score = fuzzy_score(query, &t.title);
+                    let desc_score = t
+                        .description
+                        .as_ref()
+                        .and_then(|d| fuzzy_score(query, d))
+                        .map(|s| s / 2); // Description matches worth half
+                    let score = title_score.or(desc_score)?;
+                    Some((t, score))
+                })
+                .collect();
+            // Sort by score descending
+            scored.sort_by(|a, b| b.1.cmp(&a.1));
+            self.todos = scored.into_iter().map(|(t, _)| t).collect();
         }
 
         // Apply priority filter
