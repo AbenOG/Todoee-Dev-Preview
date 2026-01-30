@@ -171,6 +171,16 @@ enum Commands {
         #[command(subcommand)]
         command: commands::batch::BatchCommand,
     },
+
+    /// Garbage collect old completed todos and operations
+    Gc {
+        /// Delete items older than N days (default: 30)
+        #[arg(short, long)]
+        days: Option<i64>,
+        /// Show what would be deleted without deleting
+        #[arg(long)]
+        dry_run: bool,
+    },
 }
 
 #[tokio::main]
@@ -254,6 +264,9 @@ async fn main() -> Result<()> {
         }
         Commands::Batch { command } => {
             commands::batch::run(command).await?;
+        }
+        Commands::Gc { days, dry_run } => {
+            commands::gc::run(days, dry_run).await?;
         }
     }
 

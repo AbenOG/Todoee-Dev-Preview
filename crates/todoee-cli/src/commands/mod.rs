@@ -5,6 +5,7 @@ pub mod delete;
 pub mod diff;
 pub mod done;
 pub mod edit;
+pub mod gc;
 pub mod head;
 pub mod list;
 pub mod log;
