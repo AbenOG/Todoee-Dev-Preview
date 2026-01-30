@@ -28,6 +28,8 @@ pub enum Mode {
     Help,
     /// Viewing todo details
     ViewingDetail,
+    /// Adding a new category
+    AddingCategory,
 }
 
 /// Field being edited in full edit mode
@@ -296,5 +298,41 @@ impl App {
     /// Check if AI is configured
     pub fn has_ai(&self) -> bool {
         self.config.ai.model.is_some()
+    }
+
+    /// Add a new category
+    pub async fn add_category(&mut self, name: String, color: Option<String>) -> Result<()> {
+        if name.is_empty() {
+            self.status_message = Some("Category name cannot be empty".to_string());
+            return Ok(());
+        }
+
+        // Check if category exists
+        if self.db.get_category_by_name(&name).await?.is_some() {
+            self.status_message = Some(format!("Category '{}' already exists", name));
+            return Ok(());
+        }
+
+        let mut category = Category::new(uuid::Uuid::nil(), name.clone());
+        category.color = color;
+        self.db.create_category(&category).await?;
+        self.status_message = Some(format!("Created category: {}", name));
+        self.refresh_categories().await?;
+        Ok(())
+    }
+
+    /// Delete selected category
+    pub async fn delete_selected_category(&mut self) -> Result<()> {
+        if let Some(cat) = self.categories.get(self.category_selected) {
+            let name = cat.name.clone();
+            let id = cat.id;
+            self.db.delete_category(id).await?;
+            self.status_message = Some(format!("Deleted category: {}", name));
+            self.refresh_categories().await?;
+            if self.category_selected >= self.categories.len() && !self.categories.is_empty() {
+                self.category_selected = self.categories.len() - 1;
+            }
+        }
+        Ok(())
     }
 }

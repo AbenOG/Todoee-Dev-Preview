@@ -465,6 +465,17 @@ impl LocalDb {
 
         rows.into_iter().map(|r| r.try_into()).collect()
     }
+
+    /// Delete a category by ID.
+    pub async fn delete_category(&self, id: Uuid) -> Result<()> {
+        sqlx::query("DELETE FROM categories WHERE id = ?")
+            .bind(id.to_string())
+            .execute(&self.pool)
+            .await
+            .context("Failed to delete category")?;
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]

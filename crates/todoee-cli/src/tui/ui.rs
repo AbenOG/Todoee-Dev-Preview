@@ -91,16 +91,26 @@ fn render_tabs(app: &App, frame: &mut Frame, area: Rect) {
     frame.render_widget(tabs_line, area);
 }
 
-fn render_category_header(_app: &App, frame: &mut Frame, area: Rect) {
-    let header = Paragraph::new(Line::from(vec![
-        Span::styled(" Categories ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-        Span::styled("  a", Style::default().fg(Color::Yellow)),
-        Span::raw(":add  "),
-        Span::styled("x", Style::default().fg(Color::Yellow)),
-        Span::raw(":delete"),
-    ]))
-    .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(Color::DarkGray)));
-    frame.render_widget(header, area);
+fn render_category_header(app: &App, frame: &mut Frame, area: Rect) {
+    if app.mode == Mode::AddingCategory {
+        let input = Paragraph::new(Line::from(vec![
+            Span::styled("> New category: ", Style::default().fg(Color::Green)),
+            Span::raw(app.input.value()),
+            Span::styled("|", Style::default().fg(Color::White)),
+        ]))
+        .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(Color::Cyan)));
+        frame.render_widget(input, area);
+    } else {
+        let header = Paragraph::new(Line::from(vec![
+            Span::styled(" Categories ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            Span::styled("  a", Style::default().fg(Color::Yellow)),
+            Span::raw(":add  "),
+            Span::styled("x", Style::default().fg(Color::Yellow)),
+            Span::raw(":delete"),
+        ]))
+        .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(Color::DarkGray)));
+        frame.render_widget(header, area);
+    }
 }
 
 fn render_categories(app: &App, frame: &mut Frame, area: Rect) {
@@ -279,6 +289,7 @@ fn render_help(app: &App, frame: &mut Frame, area: Rect) {
         Mode::Searching => "Enter:apply  Esc:cancel  Ctrl+U:clear",
         Mode::Help => "Press any key to close",
         Mode::ViewingDetail => "Esc/q/v/Enter: close detail view",
+        Mode::AddingCategory => "Enter:create  Esc:cancel",
         Mode::Normal => match app.current_view {
             View::Todos => "j/k:nav  a:add  d:done  x:del  e:edit  v:view  /:search  1/2/3:tabs  q:quit",
             View::Categories => "j/k:nav  a:add  x:delete  1/2/3:tabs  q:quit",

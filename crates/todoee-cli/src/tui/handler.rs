@@ -19,6 +19,7 @@ pub async fn handle_key_event(app: &mut App, key: KeyEvent) -> Result<()> {
         Mode::Searching => handle_searching_mode(app, key).await?,
         Mode::Help => handle_help_mode(app, key),
         Mode::ViewingDetail => handle_viewing_detail_mode(app, key),
+        Mode::AddingCategory => handle_adding_category_mode(app, key).await?,
     }
 
     Ok(())
@@ -128,6 +129,13 @@ async fn handle_categories_view(app: &mut App, key: KeyEvent) -> Result<()> {
             if app.category_selected > 0 {
                 app.category_selected -= 1;
             }
+        }
+        KeyCode::Char('a') => {
+            app.mode = Mode::AddingCategory;
+            app.input.reset();
+        }
+        KeyCode::Char('x') => {
+            app.delete_selected_category().await?;
         }
         _ => {}
     }
@@ -311,5 +319,24 @@ async fn handle_editing_full_mode(app: &mut App, key: KeyEvent) -> Result<()> {
         _ => {}
     }
 
+    Ok(())
+}
+
+async fn handle_adding_category_mode(app: &mut App, key: KeyEvent) -> Result<()> {
+    match key.code {
+        KeyCode::Esc => {
+            app.mode = Mode::Normal;
+            app.input.reset();
+        }
+        KeyCode::Enter => {
+            let name = app.input.value().trim().to_string();
+            app.add_category(name, None).await?;
+            app.input.reset();
+            app.mode = Mode::Normal;
+        }
+        _ => {
+            app.input.handle_event(&crossterm::event::Event::Key(key));
+        }
+    }
     Ok(())
 }
