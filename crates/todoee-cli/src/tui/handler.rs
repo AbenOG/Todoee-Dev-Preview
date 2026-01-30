@@ -220,12 +220,33 @@ async fn handle_adding_mode(app: &mut App, key: KeyEvent) -> Result<()> {
         KeyCode::Esc => {
             app.mode = Mode::Normal;
             app.input.reset();
+            app.pending_priority = None;
         }
         KeyCode::Enter => {
             // Use AI if available and Shift not held
             let use_ai = app.has_ai() && !key.modifiers.contains(KeyModifiers::SHIFT);
             app.add_todo_with_ai(use_ai).await?;
             app.mode = Mode::Normal;
+            app.pending_priority = None;
+        }
+        // Priority shortcuts: Ctrl+1/2/3 or Alt+1/2/3
+        KeyCode::Char('1') if key.modifiers.contains(KeyModifiers::CONTROL) || key.modifiers.contains(KeyModifiers::ALT) => {
+            app.pending_priority = Some(Priority::Low);
+        }
+        KeyCode::Char('2') if key.modifiers.contains(KeyModifiers::CONTROL) || key.modifiers.contains(KeyModifiers::ALT) => {
+            app.pending_priority = Some(Priority::Medium);
+        }
+        KeyCode::Char('3') if key.modifiers.contains(KeyModifiers::CONTROL) || key.modifiers.contains(KeyModifiers::ALT) => {
+            app.pending_priority = Some(Priority::High);
+        }
+        // Tab cycles priority
+        KeyCode::Tab => {
+            app.pending_priority = match app.pending_priority {
+                None => Some(Priority::Low),
+                Some(Priority::Low) => Some(Priority::Medium),
+                Some(Priority::Medium) => Some(Priority::High),
+                Some(Priority::High) => None,
+            };
         }
         _ => {
             app.input.handle_event(&crossterm::event::Event::Key(key));
