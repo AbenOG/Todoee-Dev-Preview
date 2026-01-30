@@ -9,6 +9,7 @@ use chrono::Utc;
 use todoee_core::Priority;
 
 use super::app::{App, Mode};
+use super::widgets::TodoDetailWidget;
 
 /// Main UI rendering function
 pub fn render(app: &App, frame: &mut Frame) {
@@ -32,6 +33,13 @@ pub fn render(app: &App, frame: &mut Frame) {
     // Render modal overlays
     if app.mode == Mode::Help {
         render_help_modal(frame);
+    }
+
+    if app.mode == Mode::ViewingDetail {
+        if let Some(todo) = app.selected_todo() {
+            let area = centered_rect(70, 80, frame.area());
+            TodoDetailWidget::new(todo).render(frame, area);
+        }
     }
 }
 
@@ -216,8 +224,9 @@ fn render_help(app: &App, frame: &mut Frame, area: Rect) {
     let help_text = match app.mode {
         Mode::Adding | Mode::Editing => "Enter:submit  Esc:cancel",
         Mode::Searching => "Enter:apply  Esc:cancel  Ctrl+U:clear",
-        Mode::Help | Mode::ViewingDetail => "Press any key to close",
-        Mode::Normal => "j/k:nav  a:add  d:done  x:del  e:edit  /:search  t:today  ?:help  q:quit",
+        Mode::Help => "Press any key to close",
+        Mode::ViewingDetail => "Esc/q/v/Enter: close detail view",
+        Mode::Normal => "j/k:nav  a:add  d:done  x:del  e:edit  v:view  /:search  t:today  ?:help  q:quit",
     };
 
     let help = Paragraph::new(Span::styled(help_text, Style::default().fg(Color::DarkGray)));

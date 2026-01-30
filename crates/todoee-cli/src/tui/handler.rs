@@ -91,6 +91,13 @@ async fn handle_normal_mode(app: &mut App, key: KeyEvent) -> Result<()> {
             app.mode = Mode::Help;
         }
 
+        // View detail
+        KeyCode::Char('v') | KeyCode::Char(' ') => {
+            if app.selected_todo().is_some() {
+                app.mode = Mode::ViewingDetail;
+            }
+        }
+
         _ => {}
     }
 
@@ -175,7 +182,7 @@ fn handle_help_mode(app: &mut App, _key: KeyEvent) {
 
 fn handle_viewing_detail_mode(app: &mut App, key: KeyEvent) {
     match key.code {
-        KeyCode::Esc | KeyCode::Char('q') | KeyCode::Enter => {
+        KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('v') | KeyCode::Char(' ') | KeyCode::Enter => {
             app.mode = Mode::Normal;
         }
         _ => {}
