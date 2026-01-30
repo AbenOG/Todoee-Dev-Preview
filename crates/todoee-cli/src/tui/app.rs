@@ -504,11 +504,31 @@ impl App {
         if should_complete {
             self.set_loading("Completing task...");
             let todo = self.todos.get_mut(self.selected).unwrap();
+
+            // Capture previous state
+            let previous_state = serde_json::to_value(&*todo).ok();
+            let todo_id = todo.id;
+
             todo.mark_complete();
             let title = todo.title.clone();
+
+            // Capture new state
+            let new_state = serde_json::to_value(&*todo).ok();
+
             self.db.update_todo(todo).await?;
+
+            // Record operation for undo/redo
+            let op = Operation::new(
+                OperationType::Complete,
+                EntityType::Todo,
+                todo_id,
+                previous_state,
+                new_state,
+            );
+            self.db.record_operation(&op).await?;
+
             self.clear_loading();
-            self.status_message = Some(format!("✓ Completed: {}", title));
+            self.status_message = Some(format!("Completed: {}", title));
             self.refresh_todos().await?;
         } else if self.todos.get(self.selected).is_some() {
             self.status_message = Some("Already completed".to_string());
@@ -522,13 +542,24 @@ impl App {
         let todo_info = self
             .todos
             .get(self.selected)
-            .map(|t| (t.id, t.title.clone()));
+            .map(|t| (t.id, t.title.clone(), serde_json::to_value(t).ok()));
 
-        if let Some((id, title)) = todo_info {
+        if let Some((id, title, previous_state)) = todo_info {
             self.set_loading("Deleting task...");
             self.db.delete_todo(id).await?;
+
+            // Record operation for undo/redo
+            let op = Operation::new(
+                OperationType::Delete,
+                EntityType::Todo,
+                id,
+                previous_state,
+                None,
+            );
+            self.db.record_operation(&op).await?;
+
             self.clear_loading();
-            self.status_message = Some(format!("✗ Deleted: {}", title));
+            self.status_message = Some(format!("Deleted: {}", title));
             self.refresh_todos().await?;
         }
         Ok(())
@@ -606,7 +637,18 @@ impl App {
 
         let title = todo.title.clone();
         self.db.create_todo(&todo).await?;
-        self.status_message = Some(format!("✓ Added: {}", title));
+
+        // Record operation for undo/redo
+        let op = Operation::new(
+            OperationType::Create,
+            EntityType::Todo,
+            todo.id,
+            None,
+            serde_json::to_value(&todo).ok(),
+        );
+        self.db.record_operation(&op).await?;
+
+        self.status_message = Some(format!("Added: {}", title));
         self.input.reset();
         self.refresh_todos().await?;
 
@@ -883,8 +925,19 @@ impl App {
         }
 
         self.db.create_todo(&todo).await?;
+
+        // Record operation for undo/redo
+        let op = Operation::new(
+            OperationType::Create,
+            EntityType::Todo,
+            todo.id,
+            None,
+            serde_json::to_value(&todo).ok(),
+        );
+        self.db.record_operation(&op).await?;
+
         self.clear_loading();
-        self.status_message = Some(format!("✓ Added: {}", title));
+        self.status_message = Some(format!("Added: {}", title));
         self.refresh_todos().await?;
 
         Ok(())
