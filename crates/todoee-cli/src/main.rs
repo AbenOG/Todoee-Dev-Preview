@@ -159,6 +159,12 @@ enum Commands {
         /// Todo ID (or prefix)
         id: String,
     },
+
+    /// Stash todos temporarily
+    Stash {
+        #[command(subcommand)]
+        command: commands::stash::StashCommand,
+    },
 }
 
 #[tokio::main]
@@ -236,6 +242,9 @@ async fn main() -> Result<()> {
         }
         Commands::Show { id } => {
             commands::show::run(&id).await?;
+        }
+        Commands::Stash { command } => {
+            commands::stash::run(command).await?;
         }
     }
 

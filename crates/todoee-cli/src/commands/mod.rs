@@ -10,6 +10,7 @@ pub mod log;
 pub mod redo;
 pub mod search;
 pub mod show;
+pub mod stash;
 pub mod sync;
 pub mod undo;
 pub mod upcoming;

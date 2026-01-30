@@ -751,6 +751,84 @@ impl LocalDb {
 
         rows.into_iter().map(|r| r.try_into()).collect()
     }
+
+    // ==================== Stash Operations ====================
+
+    /// Stash a todo (hide it temporarily).
+    pub async fn stash_todo(&self, todo_id: Uuid, message: Option<&str>) -> Result<Todo> {
+        let todo = self
+            .get_todo(todo_id)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("Todo not found"))?;
+
+        sqlx::query("INSERT INTO stash (id, todo_json, stashed_at, message) VALUES (?, ?, ?, ?)")
+            .bind(todo_id.to_string())
+            .bind(serde_json::to_string(&todo)?)
+            .bind(Utc::now().to_rfc3339())
+            .bind(message)
+            .execute(&self.pool)
+            .await
+            .context("Failed to stash todo")?;
+
+        self.delete_todo(todo_id).await?;
+        Ok(todo)
+    }
+
+    /// Pop the most recently stashed todo.
+    pub async fn stash_pop(&self) -> Result<Option<Todo>> {
+        let row = sqlx::query("SELECT * FROM stash ORDER BY stashed_at DESC LIMIT 1")
+            .fetch_optional(&self.pool)
+            .await
+            .context("Failed to fetch stashed todo")?;
+
+        if let Some(row) = row {
+            use sqlx::Row;
+            let id: String = row.get("id");
+            let json: String = row.get("todo_json");
+            let todo: Todo = serde_json::from_str(&json).context("Failed to parse stashed todo")?;
+
+            sqlx::query("DELETE FROM stash WHERE id = ?")
+                .bind(&id)
+                .execute(&self.pool)
+                .await
+                .context("Failed to delete from stash")?;
+
+            self.create_todo(&todo).await?;
+            Ok(Some(todo))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// List all stashed todos.
+    /// Returns a vector of tuples: (todo, stashed_at timestamp, optional message).
+    pub async fn stash_list(&self) -> Result<Vec<(Todo, String, Option<String>)>> {
+        let rows = sqlx::query("SELECT * FROM stash ORDER BY stashed_at DESC")
+            .fetch_all(&self.pool)
+            .await
+            .context("Failed to list stashed todos")?;
+
+        let mut result = Vec::new();
+        for row in rows {
+            use sqlx::Row;
+            let json: String = row.get("todo_json");
+            let at: String = row.get("stashed_at");
+            let msg: Option<String> = row.get("message");
+            let todo: Todo = serde_json::from_str(&json).context("Failed to parse stashed todo")?;
+            result.push((todo, at, msg));
+        }
+        Ok(result)
+    }
+
+    /// Clear all stashed todos.
+    /// Returns the number of cleared items.
+    pub async fn stash_clear(&self) -> Result<u64> {
+        let result = sqlx::query("DELETE FROM stash")
+            .execute(&self.pool)
+            .await
+            .context("Failed to clear stash")?;
+        Ok(result.rows_affected())
+    }
 }
 
 #[cfg(test)]
