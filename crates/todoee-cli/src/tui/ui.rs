@@ -10,7 +10,8 @@ use todoee_core::Priority;
 
 use super::app::{App, Mode, View};
 use super::widgets::{
-    CategoryListWidget, SettingsWidget, TodoAddWidget, TodoDetailWidget, TodoEditorWidget,
+    CategoryListWidget, InsightsWidget, SettingsWidget, TodoAddWidget, TodoDetailWidget,
+    TodoEditorWidget,
 };
 
 /// Main UI rendering function
@@ -67,6 +68,12 @@ pub fn render(app: &App, frame: &mut Frame) {
     {
         let area = centered_rect(65, 60, frame.area());
         TodoAddWidget::new(state).render(frame, area);
+    }
+    if app.mode == Mode::Insights {
+        if let Some(ref data) = app.insights_data {
+            let area = centered_rect(50, 55, frame.area());
+            InsightsWidget::new(data).render(frame, area);
+        }
     }
 
     // Loading overlay (always on top)
@@ -365,6 +372,7 @@ fn render_help(app: &App, frame: &mut Frame, area: Rect) {
         Mode::Help => "Press any key to close",
         Mode::ViewingDetail => "Esc/q/v/Enter: close detail view",
         Mode::AddingCategory => "Enter:create  Esc:cancel",
+        Mode::Insights => "Press any key to close",
         Mode::Normal => match app.current_view {
             View::Todos => {
                 "j/k:nav  a:add  d:done  x:del  e:edit  v:view  z:stash  Z:pop  u:undo  ?:help  q:quit"
@@ -423,6 +431,7 @@ fn render_help_modal(frame: &mut Frame) {
         Line::from("  o           Toggle overdue filter"),
         Line::from("  Tab         Toggle show completed"),
         Line::from("  c           Cycle category filter"),
+        Line::from("  i           View insights"),
         Line::from("  Esc         Close modal/cancel"),
         Line::from("  q           Quit"),
         Line::from(""),

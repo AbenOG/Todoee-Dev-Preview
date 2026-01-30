@@ -7,6 +7,8 @@ use tui_input::backend::crossterm::EventHandler as InputHandler;
 use super::app::{
     AddField, AddState, App, EditField, EditState, Mode, SettingsSection, SortBy, SortOrder, View,
 };
+#[allow(unused_imports)]
+use super::app::InsightsData;
 use todoee_core::Config;
 
 /// Handle key events and update app state
@@ -24,6 +26,10 @@ pub async fn handle_key_event(app: &mut App, key: KeyEvent) -> Result<()> {
         Mode::ViewingDetail => handle_viewing_detail_mode(app, key),
         Mode::AddingCategory => handle_adding_category_mode(app, key).await?,
         Mode::AddingFull => handle_adding_full_mode(app, key).await?,
+        Mode::Insights => {
+            app.mode = Mode::Normal;
+            app.insights_data = None;
+        }
     }
 
     Ok(())
@@ -208,6 +214,15 @@ async fn handle_todos_view(app: &mut App, key: KeyEvent) -> Result<()> {
         }
         KeyCode::Char('Z') => {
             app.stash_pop().await?;
+        }
+
+        // Insights
+        KeyCode::Char('i') => {
+            app.set_loading("Computing insights...");
+            let data = app.compute_insights().await?;
+            app.clear_loading();
+            app.insights_data = Some(data);
+            app.mode = Mode::Insights;
         }
 
         _ => {}

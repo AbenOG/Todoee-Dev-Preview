@@ -34,6 +34,20 @@ pub enum Mode {
     AddingCategory,
     /// Adding a new task with full fields
     AddingFull,
+    /// Viewing insights
+    Insights,
+}
+
+/// Productivity insights data
+#[derive(Debug, Clone, Default)]
+pub struct InsightsData {
+    pub total_completed_7d: usize,
+    pub total_created_7d: usize,
+    pub completion_rate: f64,
+    pub overdue_count: usize,
+    pub high_priority_pending: usize,
+    pub medium_priority_pending: usize,
+    pub low_priority_pending: usize,
 }
 
 /// Field being edited in full edit mode
@@ -227,6 +241,8 @@ pub struct App {
     pub loading_message: Option<String>,
     /// Priority to apply when adding a task
     pub pending_priority: Option<Priority>,
+    /// Insights data for the insights modal
+    pub insights_data: Option<InsightsData>,
 }
 
 /// Calculate fuzzy match score (higher = better match)
@@ -307,6 +323,7 @@ impl App {
             is_loading: false,
             loading_message: None,
             pending_priority: None,
+            insights_data: None,
         };
 
         app.refresh_todos().await?;
@@ -837,5 +854,62 @@ impl App {
             self.status_message = Some("Stash is empty".to_string());
         }
         Ok(())
+    }
+
+    /// Compute productivity insights
+    pub async fn compute_insights(&self) -> Result<InsightsData> {
+        let now = chrono::Utc::now();
+        let seven_days_ago = now - chrono::Duration::days(7);
+
+        let all_todos = self.db.list_todos(false).await?;
+
+        let completed_7d = all_todos
+            .iter()
+            .filter(|t| {
+                t.is_completed
+                    && t.completed_at
+                        .map(|c| c > seven_days_ago)
+                        .unwrap_or(false)
+            })
+            .count();
+
+        let created_7d = all_todos
+            .iter()
+            .filter(|t| t.created_at > seven_days_ago)
+            .count();
+
+        let overdue = all_todos
+            .iter()
+            .filter(|t| !t.is_completed && t.due_date.map(|d| d < now).unwrap_or(false))
+            .count();
+
+        let completion_rate = if created_7d > 0 {
+            (completed_7d as f64 / created_7d as f64) * 100.0
+        } else {
+            0.0
+        };
+
+        let high = all_todos
+            .iter()
+            .filter(|t| t.priority == Priority::High && !t.is_completed)
+            .count();
+        let med = all_todos
+            .iter()
+            .filter(|t| t.priority == Priority::Medium && !t.is_completed)
+            .count();
+        let low = all_todos
+            .iter()
+            .filter(|t| t.priority == Priority::Low && !t.is_completed)
+            .count();
+
+        Ok(InsightsData {
+            total_completed_7d: completed_7d,
+            total_created_7d: created_7d,
+            completion_rate,
+            overdue_count: overdue,
+            high_priority_pending: high,
+            medium_priority_pending: med,
+            low_priority_pending: low,
+        })
     }
 }
