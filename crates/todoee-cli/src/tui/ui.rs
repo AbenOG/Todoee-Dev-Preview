@@ -159,24 +159,40 @@ fn render_input(app: &App, frame: &mut Frame, area: Rect) {
         "Press 'a' to add task, '/' to search"
     };
 
-    let input = Paragraph::new(Line::from(vec![
+    // Priority indicator for Adding mode
+    let priority_indicator = if app.mode == Mode::Adding {
+        let (text, color) = match app.pending_priority {
+            Some(Priority::High) => (" [!!!]", Color::Red),
+            Some(Priority::Medium) => (" [!!]", Color::Yellow),
+            Some(Priority::Low) => (" [!]", Color::Green),
+            None => (" [--]", Color::DarkGray),
+        };
+        Span::styled(text, Style::default().fg(color))
+    } else {
+        Span::raw("")
+    };
+
+    let mut spans = vec![
         Span::styled(prompt, style),
         Span::raw(input_text),
-        if matches!(app.mode, Mode::Adding | Mode::Searching | Mode::Editing) {
-            Span::styled("│", Style::default().fg(Color::White).add_modifier(Modifier::SLOW_BLINK))
-        } else {
-            Span::raw("")
-        },
-    ]))
-    .block(
-        Block::default()
-            .borders(Borders::ALL)
-            .border_style(if matches!(app.mode, Mode::Adding | Mode::Searching | Mode::Editing) {
-                Style::default().fg(Color::Cyan)
-            } else {
-                Style::default().fg(Color::DarkGray)
-            })
-    );
+    ];
+
+    if matches!(app.mode, Mode::Adding | Mode::Searching | Mode::Editing) {
+        spans.push(Span::styled("│", Style::default().fg(Color::White).add_modifier(Modifier::SLOW_BLINK)));
+    }
+
+    spans.push(priority_indicator);
+
+    let input = Paragraph::new(Line::from(spans))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(if matches!(app.mode, Mode::Adding | Mode::Searching | Mode::Editing) {
+                    Style::default().fg(Color::Cyan)
+                } else {
+                    Style::default().fg(Color::DarkGray)
+                })
+        );
 
     frame.render_widget(input, area);
 }
