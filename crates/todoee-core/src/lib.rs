@@ -7,3 +7,4 @@ pub mod sync;
 
 pub use models::*;
 pub use config::{Config, AiConfig, DatabaseConfig, NotificationConfig, DisplayConfig};
+pub use db::LocalDb;
