@@ -10,3 +10,4 @@ pub use error::{TodoeeError, Result};
 pub use models::*;
 pub use config::{Config, AiConfig, DatabaseConfig, NotificationConfig, DisplayConfig};
 pub use db::LocalDb;
+pub use ai::{AiClient, ParsedTask};
