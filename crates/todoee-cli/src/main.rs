@@ -98,6 +98,23 @@ enum Commands {
 
     /// Redo the last undone operation
     Redo,
+
+    /// Show operation history
+    Log {
+        /// Number of operations to show (default: 10)
+        #[arg(short = 'n', long)]
+        limit: Option<usize>,
+        /// Show one operation per line
+        #[arg(long)]
+        oneline: bool,
+    },
+
+    /// Show recent changes
+    Diff {
+        /// Show changes in the last N hours (default: 24)
+        #[arg(long)]
+        hours: Option<i64>,
+    },
 }
 
 #[tokio::main]
@@ -151,6 +168,12 @@ async fn main() -> Result<()> {
         }
         Commands::Redo => {
             commands::redo().await?;
+        }
+        Commands::Log { limit, oneline } => {
+            commands::log::run(limit, oneline).await?;
+        }
+        Commands::Diff { hours } => {
+            commands::diff::run(hours).await?;
         }
     }
 

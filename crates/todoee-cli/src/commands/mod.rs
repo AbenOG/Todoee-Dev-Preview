@@ -1,9 +1,11 @@
 pub mod add;
 pub mod config;
 pub mod delete;
+pub mod diff;
 pub mod done;
 pub mod edit;
 pub mod list;
+pub mod log;
 pub mod redo;
 pub mod sync;
 pub mod undo;
