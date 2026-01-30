@@ -360,7 +360,7 @@ fn render_help(app: &App, frame: &mut Frame, area: Rect) {
         Mode::AddingCategory => "Enter:create  Esc:cancel",
         Mode::Normal => match app.current_view {
             View::Todos => {
-                "j/k:nav  a:add  d:done  x:del  e:edit  v:view  u:undo  ^r:redo  /:search  ?:help  q:quit"
+                "j/k:nav  a:add  d:done  x:del  e:edit  v:view  z:stash  Z:pop  u:undo  ?:help  q:quit"
             }
             View::Categories => "j/k:nav  a:add  x:delete  1/2/3:tabs  q:quit",
             View::Settings => "j/k:nav sections  r:reload config  1/2/3:tabs  q:quit",
@@ -404,6 +404,8 @@ fn render_help_modal(frame: &mut Frame) {
         Line::from("  Enter       Toggle complete"),
         Line::from("  d           Mark as done"),
         Line::from("  x           Delete todo"),
+        Line::from("  z           Stash todo"),
+        Line::from("  Z           Pop from stash"),
         Line::from("  u           Undo last action"),
         Line::from("  Ctrl+r      Redo last undone action"),
         Line::from("  /           Search"),

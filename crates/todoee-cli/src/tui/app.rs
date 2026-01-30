@@ -737,4 +737,26 @@ impl App {
 
         Ok(())
     }
+
+    /// Stash the selected todo
+    pub async fn stash_selected(&mut self) -> Result<()> {
+        if let Some(todo) = self.selected_todo().cloned() {
+            let title = todo.title.clone();
+            self.db.stash_todo(todo.id, None).await?;
+            self.status_message = Some(format!("Stashed: {}", title));
+            self.refresh_todos().await?;
+        }
+        Ok(())
+    }
+
+    /// Pop the most recent stashed todo
+    pub async fn stash_pop(&mut self) -> Result<()> {
+        if let Some(todo) = self.db.stash_pop().await? {
+            self.status_message = Some(format!("Restored: {}", todo.title));
+            self.refresh_todos().await?;
+        } else {
+            self.status_message = Some("Stash is empty".to_string());
+        }
+        Ok(())
+    }
 }

@@ -188,6 +188,14 @@ async fn handle_todos_view(app: &mut App, key: KeyEvent) -> Result<()> {
             app.redo().await?;
         }
 
+        // Stash
+        KeyCode::Char('z') => {
+            app.stash_selected().await?;
+        }
+        KeyCode::Char('Z') => {
+            app.stash_pop().await?;
+        }
+
         _ => {}
     }
     Ok(())
