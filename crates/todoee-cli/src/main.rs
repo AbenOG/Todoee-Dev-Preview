@@ -190,6 +190,9 @@ enum Commands {
         #[arg(short, long, default_value = "25")]
         duration: u32,
     },
+
+    /// Suggest what to work on right now
+    Now,
 }
 
 #[tokio::main]
@@ -279,6 +282,9 @@ async fn main() -> Result<()> {
         }
         Commands::Focus { id, duration } => {
             commands::focus::run(id, duration).await?;
+        }
+        Commands::Now => {
+            commands::now::run().await?;
         }
     }
 
