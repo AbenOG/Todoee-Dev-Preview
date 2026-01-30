@@ -142,6 +142,10 @@ pub struct App {
     pub category_selected: usize,
     /// Current settings section
     pub settings_section: SettingsSection,
+    /// Whether an async operation is in progress
+    pub is_loading: bool,
+    /// Loading message to display
+    pub loading_message: Option<String>,
 }
 
 impl App {
@@ -166,6 +170,8 @@ impl App {
             current_view: View::default(),
             category_selected: 0,
             settings_section: SettingsSection::default(),
+            is_loading: false,
+            loading_message: None,
         };
 
         app.refresh_todos().await?;
@@ -356,6 +362,18 @@ impl App {
     /// Check if AI is configured
     pub fn has_ai(&self) -> bool {
         self.config.ai.model.is_some()
+    }
+
+    /// Set loading state with a message
+    pub fn set_loading(&mut self, message: &str) {
+        self.is_loading = true;
+        self.loading_message = Some(message.to_string());
+    }
+
+    /// Clear loading state
+    pub fn clear_loading(&mut self) {
+        self.is_loading = false;
+        self.loading_message = None;
     }
 
     /// Add a new category
