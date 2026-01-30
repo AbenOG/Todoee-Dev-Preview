@@ -1,6 +1,7 @@
 use ratatui::style::{Color, Modifier, Style};
 
-/// Application theme colors
+/// Application theme colors - provides centralized styling for future customization
+#[allow(dead_code)]
 pub struct Theme {
     pub primary: Color,
     pub secondary: Color,
@@ -33,6 +34,7 @@ impl Default for Theme {
     }
 }
 
+#[allow(dead_code)]
 impl Theme {
     pub fn border_style(&self, focused: bool) -> Style {
         Style::default().fg(if focused { self.border_focused } else { self.border })

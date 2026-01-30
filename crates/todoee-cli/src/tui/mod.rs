@@ -9,4 +9,4 @@ pub use app::App;
 pub use event::{Event, EventHandler};
 pub use handler::handle_key_event;
 pub use terminal::Tui;
-pub use theme::Theme;
+// Theme is available for future customization: pub use theme::Theme;

@@ -6,6 +6,7 @@ use std::time::{Duration, Instant};
 
 /// Terminal events
 #[derive(Clone, Debug)]
+#[allow(dead_code)] // Mouse and Resize variants are part of the API
 pub enum Event {
     /// Terminal tick (for animations/updates)
     Tick,
@@ -19,8 +20,6 @@ pub enum Event {
 
 /// Handles terminal events
 pub struct EventHandler {
-    /// Event sender
-    sender: mpsc::Sender<Event>,
     /// Event receiver
     receiver: mpsc::Receiver<Event>,
     /// Event handler thread
@@ -72,7 +71,6 @@ impl EventHandler {
         });
 
         Self {
-            sender,
             receiver,
             _handler: handler,
         }

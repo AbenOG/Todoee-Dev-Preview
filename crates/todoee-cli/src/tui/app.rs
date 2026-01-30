@@ -155,23 +155,6 @@ impl App {
         Ok(())
     }
 
-    /// Add a new todo from input
-    pub async fn add_todo_from_input(&mut self) -> Result<()> {
-        let description = self.input.value().trim().to_string();
-        if description.is_empty() {
-            self.status_message = Some("Cannot add empty task".to_string());
-            return Ok(());
-        }
-
-        let todo = Todo::new(description.clone(), None);
-        self.db.create_todo(&todo).await?;
-        self.status_message = Some(format!("✓ Added: {}", description));
-        self.input.reset();
-        self.refresh_todos().await?;
-
-        Ok(())
-    }
-
     /// Toggle today filter
     pub fn toggle_today_filter(&mut self) {
         self.filter.today_only = !self.filter.today_only;

@@ -33,11 +33,6 @@ impl Tui {
         Ok(())
     }
 
-    /// Get mutable reference to the terminal
-    pub fn terminal(&mut self) -> &mut Terminal<CrosstermBackend<Stdout>> {
-        &mut self.terminal
-    }
-
     /// Draw a frame
     pub fn draw<F>(&mut self, f: F) -> Result<()>
     where
