@@ -1,5 +1,5 @@
 use ratatui::{
-    layout::{Constraint, Direction, Layout, Rect},
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style, Stylize},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
@@ -59,6 +59,11 @@ pub fn render(app: &App, frame: &mut Frame) {
     {
         let area = centered_rect(60, 50, frame.area());
         TodoEditorWidget::new(state).render(frame, area);
+    }
+
+    // Loading overlay (always on top)
+    if app.is_loading {
+        render_loading_overlay(app, frame);
     }
 }
 
@@ -390,6 +395,45 @@ fn render_help_modal(frame: &mut Frame) {
 
     frame.render_widget(Clear, area);
     frame.render_widget(help, area);
+}
+
+fn render_loading_overlay(app: &App, frame: &mut Frame) {
+    let area = centered_rect(40, 15, frame.area());
+
+    // Animated spinner characters
+    let spinner_chars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+    let idx = (std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis()
+        / 100) as usize
+        % spinner_chars.len();
+    let spinner = spinner_chars[idx];
+
+    let message = app.loading_message.as_deref().unwrap_or("Loading...");
+
+    let content = vec![
+        Line::from(""),
+        Line::from(Span::styled(
+            format!("  {}  {}", spinner, message),
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )),
+        Line::from(""),
+    ];
+
+    let loading = Paragraph::new(content)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::Cyan))
+                .title(" Processing "),
+        )
+        .alignment(Alignment::Center);
+
+    frame.render_widget(Clear, area);
+    frame.render_widget(loading, area);
 }
 
 /// Helper function to create a centered rect
