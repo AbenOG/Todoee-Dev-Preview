@@ -45,7 +45,7 @@ pub struct App {
     /// Status message to display
     pub status_message: Option<String>,
     /// Database connection
-    db: LocalDb,
+    pub db: LocalDb,
     /// Configuration
     config: Config,
 }
