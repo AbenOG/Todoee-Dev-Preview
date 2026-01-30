@@ -181,6 +181,15 @@ enum Commands {
         #[arg(long)]
         dry_run: bool,
     },
+
+    /// Start a focus session (Pomodoro timer)
+    Focus {
+        /// Todo ID to focus on (optional, picks highest priority if not specified)
+        id: Option<String>,
+        /// Duration in minutes (default: 25)
+        #[arg(short, long, default_value = "25")]
+        duration: u32,
+    },
 }
 
 #[tokio::main]
@@ -267,6 +276,9 @@ async fn main() -> Result<()> {
         }
         Commands::Gc { days, dry_run } => {
             commands::gc::run(days, dry_run).await?;
+        }
+        Commands::Focus { id, duration } => {
+            commands::focus::run(id, duration).await?;
         }
     }
 
