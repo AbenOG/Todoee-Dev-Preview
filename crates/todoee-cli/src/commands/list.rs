@@ -11,11 +11,11 @@ pub async fn run(today: bool, category: Option<String>, all: bool) -> Result<()>
     let db_path = config.local_db_path()?;
 
     // Ensure config directory exists
-    if let Some(parent) = db_path.parent() {
-        if !parent.exists() {
-            fs::create_dir_all(parent)
-                .with_context(|| format!("Failed to create config directory: {}", parent.display()))?;
-        }
+    if let Some(parent) = db_path.parent()
+        && !parent.exists()
+    {
+        fs::create_dir_all(parent)
+            .with_context(|| format!("Failed to create config directory: {}", parent.display()))?;
     }
 
     let db = LocalDb::new(&db_path).await?;

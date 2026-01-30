@@ -76,9 +76,9 @@ async fn show_config() -> Result<()> {
 
     let ai_key_set = env::var(&config.ai.api_key_env).is_ok();
     if ai_key_set {
-        println!("  {} {} is set", "\u{2713}", config.ai.api_key_env);
+        println!("  \u{2713} {} is set", config.ai.api_key_env);
     } else {
-        println!("  {} {} is not set", "\u{2717}", config.ai.api_key_env);
+        println!("  \u{2717} {} is not set", config.ai.api_key_env);
     }
     println!();
 
@@ -86,9 +86,9 @@ async fn show_config() -> Result<()> {
     println!("[Database]");
     let db_url_set = env::var(&config.database.url_env).is_ok();
     if db_url_set {
-        println!("  {} {} is set (cloud sync available)", "\u{2713}", config.database.url_env);
+        println!("  \u{2713} {} is set (cloud sync available)", config.database.url_env);
     } else {
-        println!("  {} {} is not set (local-only mode)", "\u{2717}", config.database.url_env);
+        println!("  \u{2717} {} is not set (local-only mode)", config.database.url_env);
     }
     println!("  Local DB: {}", config.database.local_db_name);
     println!();

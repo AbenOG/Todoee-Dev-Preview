@@ -22,11 +22,11 @@ pub async fn run(
     let db_path = config.local_db_path()?;
 
     // Ensure config directory exists
-    if let Some(parent) = db_path.parent() {
-        if !parent.exists() {
-            fs::create_dir_all(parent)
-                .with_context(|| format!("Failed to create config directory: {}", parent.display()))?;
-        }
+    if let Some(parent) = db_path.parent()
+        && !parent.exists()
+    {
+        fs::create_dir_all(parent)
+            .with_context(|| format!("Failed to create config directory: {}", parent.display()))?;
     }
 
     let db = LocalDb::new(&db_path).await?;
@@ -70,10 +70,10 @@ pub async fn run(
     println!("\u{2713} Created: {}", todo.title);
 
     // Print category if any
-    if let Some(cat_id) = todo.category_id {
-        if let Some(cat_name) = find_category_name(&db, cat_id).await? {
-            println!("  Category: {}", cat_name);
-        }
+    if let Some(cat_id) = todo.category_id
+        && let Some(cat_name) = find_category_name(&db, cat_id).await?
+    {
+        println!("  Category: {}", cat_name);
     }
 
     // Print due date if any

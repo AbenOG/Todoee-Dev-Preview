@@ -243,14 +243,14 @@ async fn handle_editing_mode(app: &mut App, key: KeyEvent) -> Result<()> {
         }
         KeyCode::Enter => {
             let new_title = app.input.value().trim().to_string();
-            if !new_title.is_empty() {
-                if let Some(todo) = app.todos.get_mut(app.selected) {
-                    todo.title = new_title.clone();
-                    todo.updated_at = chrono::Utc::now();
-                    todo.sync_status = todoee_core::SyncStatus::Pending;
-                    app.db.update_todo(todo).await?;
-                    app.status_message = Some(format!("✓ Updated: {}", new_title));
-                }
+            if !new_title.is_empty()
+                && let Some(todo) = app.todos.get_mut(app.selected)
+            {
+                todo.title = new_title.clone();
+                todo.updated_at = chrono::Utc::now();
+                todo.sync_status = todoee_core::SyncStatus::Pending;
+                app.db.update_todo(todo).await?;
+                app.status_message = Some(format!("✓ Updated: {}", new_title));
             }
             app.mode = Mode::Normal;
             app.input.reset();

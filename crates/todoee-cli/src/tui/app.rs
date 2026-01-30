@@ -13,6 +13,7 @@ pub enum View {
 
 /// Application mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
 pub enum Mode {
     /// Normal navigation mode
     Normal,

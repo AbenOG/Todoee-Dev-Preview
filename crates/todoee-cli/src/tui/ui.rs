@@ -48,22 +48,22 @@ pub fn render(app: &App, frame: &mut Frame) {
     if app.mode == Mode::Help {
         render_help_modal(frame);
     }
-    if app.mode == Mode::ViewingDetail {
-        if let Some(todo) = app.selected_todo() {
-            let area = centered_rect(70, 80, frame.area());
-            TodoDetailWidget::new(todo).render(frame, area);
-        }
+    if app.mode == Mode::ViewingDetail
+        && let Some(todo) = app.selected_todo()
+    {
+        let area = centered_rect(70, 80, frame.area());
+        TodoDetailWidget::new(todo).render(frame, area);
     }
-    if app.mode == Mode::EditingFull {
-        if let Some(ref state) = app.edit_state {
-            let area = centered_rect(60, 50, frame.area());
-            TodoEditorWidget::new(state).render(frame, area);
-        }
+    if app.mode == Mode::EditingFull
+        && let Some(ref state) = app.edit_state
+    {
+        let area = centered_rect(60, 50, frame.area());
+        TodoEditorWidget::new(state).render(frame, area);
     }
 }
 
 fn render_tabs(app: &App, frame: &mut Frame, area: Rect) {
-    let tabs = vec![
+    let tabs = [
         ("1: Todos", View::Todos),
         ("2: Categories", View::Categories),
         ("3: Settings", View::Settings),
@@ -82,15 +82,15 @@ fn render_tabs(app: &App, frame: &mut Frame, area: Rect) {
         .collect();
 
     // Add filter indicators for Todos view
-    if app.current_view == View::Todos {
-        if let Some(priority) = app.filter.priority {
-            let (text, color) = match priority {
-                Priority::High => ("HIGH", Color::Red),
-                Priority::Medium => ("MEDIUM", Color::Yellow),
-                Priority::Low => ("LOW", Color::Green),
-            };
-            spans.push(Span::styled(format!(" [{}] ", text), Style::default().fg(color)));
-        }
+    if app.current_view == View::Todos
+        && let Some(priority) = app.filter.priority
+    {
+        let (text, color) = match priority {
+            Priority::High => ("HIGH", Color::Red),
+            Priority::Medium => ("MEDIUM", Color::Yellow),
+            Priority::Low => ("LOW", Color::Green),
+        };
+        spans.push(Span::styled(format!(" [{}] ", text), Style::default().fg(color)));
     }
 
     let tabs_line = Paragraph::new(Line::from(spans))
