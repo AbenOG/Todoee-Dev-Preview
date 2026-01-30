@@ -70,7 +70,12 @@ async fn find_todos_by_partial_id(db: &LocalDb, prefix: &str) -> Result<Vec<Todo
 
     let matches: Vec<Todo> = all_todos
         .into_iter()
-        .filter(|todo| todo.id.to_string().to_lowercase().starts_with(&prefix_lower))
+        .filter(|todo| {
+            todo.id
+                .to_string()
+                .to_lowercase()
+                .starts_with(&prefix_lower)
+        })
         .collect();
 
     Ok(matches)

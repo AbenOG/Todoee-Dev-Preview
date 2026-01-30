@@ -60,7 +60,10 @@ pub async fn run() -> Result<()> {
             if let Some(mut todo) = db.get_todo(op.entity_id).await? {
                 todo.mark_complete();
                 db.update_todo(&todo).await?;
-                println!("\u{21a9} Undone uncomplete: \"{}\" is done again", todo.title);
+                println!(
+                    "\u{21a9} Undone uncomplete: \"{}\" is done again",
+                    todo.title
+                );
             }
         }
         (OperationType::Stash, EntityType::Todo) => {

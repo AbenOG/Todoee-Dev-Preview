@@ -1,12 +1,12 @@
+use chrono::Utc;
 use ratatui::{
+    Frame,
     layout::Rect,
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph, Wrap},
-    Frame,
 };
 use todoee_core::{Priority, Todo};
-use chrono::Utc;
 
 pub struct TodoDetailWidget<'a> {
     todo: &'a Todo,
@@ -52,11 +52,15 @@ impl<'a> TodoDetailWidget<'a> {
             "No due date".to_string()
         };
 
-        let reminder_text = self.todo.reminder_at
+        let reminder_text = self
+            .todo
+            .reminder_at
             .map(|r| format!("Reminder: {}", r.format("%Y-%m-%d %H:%M")))
             .unwrap_or_else(|| "No reminder set".to_string());
 
-        let category_text = self.todo.category_id
+        let category_text = self
+            .todo
+            .category_id
             .map(|id| format!("Category ID: {}", &id.to_string()[..8]))
             .unwrap_or_else(|| "No category".to_string());
 
@@ -78,31 +82,44 @@ impl<'a> TodoDetailWidget<'a> {
                 Span::styled(priority_text, Style::default().fg(priority_color)),
             ]),
             Line::from(""),
-            Line::from(vec![
-                Span::styled("Description: ", Style::default().add_modifier(Modifier::BOLD)),
-            ]),
+            Line::from(vec![Span::styled(
+                "Description: ",
+                Style::default().add_modifier(Modifier::BOLD),
+            )]),
             Line::from(self.todo.description.as_deref().unwrap_or("(none)")),
             Line::from(""),
-            Line::from(vec![
-                Span::styled(&due_text, Style::default().fg(if self.todo.due_date.is_some() { Color::Cyan } else { Color::DarkGray })),
-            ]),
-            Line::from(vec![
-                Span::styled(&reminder_text, Style::default().fg(Color::DarkGray)),
-            ]),
-            Line::from(vec![
-                Span::styled(&category_text, Style::default().fg(Color::DarkGray)),
-            ]),
+            Line::from(vec![Span::styled(
+                &due_text,
+                Style::default().fg(if self.todo.due_date.is_some() {
+                    Color::Cyan
+                } else {
+                    Color::DarkGray
+                }),
+            )]),
+            Line::from(vec![Span::styled(
+                &reminder_text,
+                Style::default().fg(Color::DarkGray),
+            )]),
+            Line::from(vec![Span::styled(
+                &category_text,
+                Style::default().fg(Color::DarkGray),
+            )]),
             Line::from(""),
-            Line::from(vec![
-                Span::styled(&created, Style::default().fg(Color::DarkGray)),
-            ]),
-            Line::from(vec![
-                Span::styled(&updated, Style::default().fg(Color::DarkGray)),
-            ]),
+            Line::from(vec![Span::styled(
+                &created,
+                Style::default().fg(Color::DarkGray),
+            )]),
+            Line::from(vec![Span::styled(
+                &updated,
+                Style::default().fg(Color::DarkGray),
+            )]),
             Line::from(""),
             Line::from(vec![
                 Span::styled("ID: ", Style::default().fg(Color::DarkGray)),
-                Span::styled(self.todo.id.to_string(), Style::default().fg(Color::DarkGray)),
+                Span::styled(
+                    self.todo.id.to_string(),
+                    Style::default().fg(Color::DarkGray),
+                ),
             ]),
         ];
 
@@ -111,7 +128,7 @@ impl<'a> TodoDetailWidget<'a> {
                 Block::default()
                     .title(" Todo Details ")
                     .borders(Borders::ALL)
-                    .border_style(Style::default().fg(Color::Cyan))
+                    .border_style(Style::default().fg(Color::Cyan)),
             )
             .wrap(Wrap { trim: false });
 

@@ -37,11 +37,17 @@ impl Default for Theme {
 #[allow(dead_code)]
 impl Theme {
     pub fn border_style(&self, focused: bool) -> Style {
-        Style::default().fg(if focused { self.border_focused } else { self.border })
+        Style::default().fg(if focused {
+            self.border_focused
+        } else {
+            self.border
+        })
     }
 
     pub fn title_style(&self) -> Style {
-        Style::default().fg(self.primary).add_modifier(Modifier::BOLD)
+        Style::default()
+            .fg(self.primary)
+            .add_modifier(Modifier::BOLD)
     }
 
     pub fn selected_style(&self) -> Style {

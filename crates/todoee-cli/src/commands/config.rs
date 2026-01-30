@@ -72,7 +72,14 @@ async fn show_config() -> Result<()> {
     // AI Configuration
     println!("[AI]");
     println!("  Provider: {}", config.ai.provider);
-    println!("  Model: {}", config.ai.model.as_deref().unwrap_or("(not set - AI parsing disabled)"));
+    println!(
+        "  Model: {}",
+        config
+            .ai
+            .model
+            .as_deref()
+            .unwrap_or("(not set - AI parsing disabled)")
+    );
 
     let ai_key_set = env::var(&config.ai.api_key_env).is_ok();
     if ai_key_set {
@@ -86,18 +93,41 @@ async fn show_config() -> Result<()> {
     println!("[Database]");
     let db_url_set = env::var(&config.database.url_env).is_ok();
     if db_url_set {
-        println!("  \u{2713} {} is set (cloud sync available)", config.database.url_env);
+        println!(
+            "  \u{2713} {} is set (cloud sync available)",
+            config.database.url_env
+        );
     } else {
-        println!("  \u{2717} {} is not set (local-only mode)", config.database.url_env);
+        println!(
+            "  \u{2717} {} is not set (local-only mode)",
+            config.database.url_env
+        );
     }
     println!("  Local DB: {}", config.database.local_db_name);
     println!();
 
     // Notification Configuration
     println!("[Notifications]");
-    println!("  Enabled: {}", if config.notifications.enabled { "yes" } else { "no" });
-    println!("  Sound: {}", if config.notifications.sound { "yes" } else { "no" });
-    println!("  Advance notice: {} minutes", config.notifications.advance_minutes);
+    println!(
+        "  Enabled: {}",
+        if config.notifications.enabled {
+            "yes"
+        } else {
+            "no"
+        }
+    );
+    println!(
+        "  Sound: {}",
+        if config.notifications.sound {
+            "yes"
+        } else {
+            "no"
+        }
+    );
+    println!(
+        "  Advance notice: {} minutes",
+        config.notifications.advance_minutes
+    );
     println!();
 
     // Display Configuration

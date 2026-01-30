@@ -26,7 +26,9 @@ pub async fn run() -> Result<()> {
             println!("2. Copy your connection string from the Neon dashboard");
             println!();
             println!("3. Set the environment variable:");
-            println!("   export NEON_DATABASE_URL=\"postgres://user:pass@host/db?sslmode=require\"");
+            println!(
+                "   export NEON_DATABASE_URL=\"postgres://user:pass@host/db?sslmode=require\""
+            );
             println!();
             println!("4. Add it to your shell profile (~/.bashrc or ~/.zshrc) for persistence");
             println!();

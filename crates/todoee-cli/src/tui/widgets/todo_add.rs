@@ -1,9 +1,9 @@
 use ratatui::{
+    Frame,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::Span,
     widgets::{Block, Borders, Clear, Paragraph},
-    Frame,
 };
 use todoee_core::Priority;
 
@@ -132,11 +132,7 @@ impl<'a> TodoAddWidget<'a> {
         active: bool,
         _required: bool,
     ) {
-        let border_color = if active {
-            Color::Cyan
-        } else {
-            Color::DarkGray
-        };
+        let border_color = if active { Color::Cyan } else { Color::DarkGray };
 
         let label_style = if active {
             Style::default()

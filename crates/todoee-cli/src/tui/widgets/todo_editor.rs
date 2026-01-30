@@ -1,8 +1,8 @@
 use ratatui::{
+    Frame,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     widgets::{Block, Borders, Clear, Paragraph},
-    Frame,
 };
 use todoee_core::Priority;
 
@@ -101,14 +101,7 @@ impl<'a> TodoEditorWidget<'a> {
         );
     }
 
-    fn render_field(
-        &self,
-        frame: &mut Frame,
-        area: Rect,
-        label: &str,
-        value: &str,
-        active: bool,
-    ) {
+    fn render_field(&self, frame: &mut Frame, area: Rect, label: &str, value: &str, active: bool) {
         let border_style = if active {
             Style::default().fg(Color::Cyan)
         } else {

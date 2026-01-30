@@ -1,7 +1,9 @@
 use anyhow::{Context, Result};
 use chrono::Utc;
 use std::fs;
-use todoee_core::{Category, Config, EntityType, LocalDb, Operation, OperationType, Priority, SyncStatus, Todo};
+use todoee_core::{
+    Category, Config, EntityType, LocalDb, Operation, OperationType, Priority, SyncStatus, Todo,
+};
 use uuid::Uuid;
 
 pub async fn run(
@@ -59,7 +61,9 @@ pub async fn run(
             if let Some(cat_name) = category {
                 let cat_id = get_or_create_category(&db, &cat_name, None).await?;
                 let old_cat = match todo.category_id {
-                    Some(old_id) => find_category_name(&db, old_id).await?.unwrap_or_else(|| "Unknown".to_string()),
+                    Some(old_id) => find_category_name(&db, old_id)
+                        .await?
+                        .unwrap_or_else(|| "Unknown".to_string()),
                     None => "None".to_string(),
                 };
                 todo.category_id = Some(cat_id);
@@ -135,18 +139,19 @@ async fn find_todos_by_partial_id(db: &LocalDb, prefix: &str) -> Result<Vec<Todo
 
     let matches: Vec<Todo> = all_todos
         .into_iter()
-        .filter(|todo| todo.id.to_string().to_lowercase().starts_with(&prefix_lower))
+        .filter(|todo| {
+            todo.id
+                .to_string()
+                .to_lowercase()
+                .starts_with(&prefix_lower)
+        })
         .collect();
 
     Ok(matches)
 }
 
 /// Look up or create a category by name
-async fn get_or_create_category(
-    db: &LocalDb,
-    name: &str,
-    user_id: Option<Uuid>,
-) -> Result<Uuid> {
+async fn get_or_create_category(db: &LocalDb, name: &str, user_id: Option<Uuid>) -> Result<Uuid> {
     // Check if category already exists
     if let Some(existing) = db.get_category_by_name(name).await? {
         return Ok(existing.id);

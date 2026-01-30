@@ -68,8 +68,14 @@ pub async fn run(today: bool, category: Option<String>, all: bool) -> Result<()>
             (None, Some(_)) => std::cmp::Ordering::Greater, // Uncategorized last
             (Some(_), None) => std::cmp::Ordering::Less,
             (Some(a_id), Some(b_id)) => {
-                let a_name = category_map.get(a_id).map(|c| c.name.as_str()).unwrap_or("");
-                let b_name = category_map.get(b_id).map(|c| c.name.as_str()).unwrap_or("");
+                let a_name = category_map
+                    .get(a_id)
+                    .map(|c| c.name.as_str())
+                    .unwrap_or("");
+                let b_name = category_map
+                    .get(b_id)
+                    .map(|c| c.name.as_str())
+                    .unwrap_or("");
                 a_name.to_lowercase().cmp(&b_name.to_lowercase())
             }
         }

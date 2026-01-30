@@ -41,9 +41,7 @@ pub async fn run(days: Option<i64>, dry_run: bool) -> Result<()> {
         // Count what would be deleted
         let old_completed = all_todos
             .iter()
-            .filter(|t| {
-                t.is_completed && t.completed_at.map(|c| c < cutoff).unwrap_or(false)
-            })
+            .filter(|t| t.is_completed && t.completed_at.map(|c| c < cutoff).unwrap_or(false))
             .count();
 
         println!("Would delete:");

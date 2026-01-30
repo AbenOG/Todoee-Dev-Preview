@@ -1,6 +1,8 @@
 use anyhow::{Context, Result};
 use std::fs;
-use todoee_core::{AiClient, Category, Config, EntityType, LocalDb, Operation, OperationType, Priority, Todo};
+use todoee_core::{
+    AiClient, Category, Config, EntityType, LocalDb, Operation, OperationType, Priority, Todo,
+};
 use uuid::Uuid;
 
 pub async fn run(
@@ -118,7 +120,7 @@ async fn parse_with_ai(config: &Config, description: &str) -> Result<Todo> {
     // Convert AI priority to internal Priority enum
     if let Some(p) = parsed.priority {
         todo.priority = match p {
-            1 => Priority::High,  // AI uses 1=highest
+            1 => Priority::High, // AI uses 1=highest
             2 => Priority::High,
             3 => Priority::Medium,
             _ => Priority::Low,
@@ -135,11 +137,7 @@ async fn parse_with_ai(config: &Config, description: &str) -> Result<Todo> {
 }
 
 /// Look up or create a category by name
-async fn get_or_create_category(
-    db: &LocalDb,
-    name: &str,
-    user_id: Option<Uuid>,
-) -> Result<Uuid> {
+async fn get_or_create_category(db: &LocalDb, name: &str, user_id: Option<Uuid>) -> Result<Uuid> {
     // Check if category already exists
     if let Some(existing) = db.get_category_by_name(name).await? {
         return Ok(existing.id);

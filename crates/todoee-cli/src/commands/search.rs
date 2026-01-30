@@ -29,11 +29,7 @@ pub async fn run(query: &str) -> Result<()> {
         .iter()
         .filter_map(|todo| {
             let score = fuzzy_score(&todo.title.to_lowercase(), &query_lower);
-            if score > 0 {
-                Some((todo, score))
-            } else {
-                None
-            }
+            if score > 0 { Some((todo, score)) } else { None }
         })
         .collect();
 
@@ -45,7 +41,11 @@ pub async fn run(query: &str) -> Result<()> {
         return Ok(());
     }
 
-    println!("Found {} matches for \"{}\":\n", matches.len().min(20), query);
+    println!(
+        "Found {} matches for \"{}\":\n",
+        matches.len().min(20),
+        query
+    );
 
     for (todo, _score) in matches.iter().take(20) {
         let check = if todo.is_completed {
