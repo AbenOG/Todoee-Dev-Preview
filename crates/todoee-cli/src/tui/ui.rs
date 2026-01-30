@@ -10,8 +10,8 @@ use todoee_core::Priority;
 
 use super::app::{App, Mode, View};
 use super::widgets::{
-    CategoryListWidget, InsightsWidget, SettingsWidget, TodoAddWidget, TodoDetailWidget,
-    TodoEditorWidget,
+    CategoryListWidget, FocusWidget, InsightsWidget, SettingsWidget, TodoAddWidget,
+    TodoDetailWidget, TodoEditorWidget,
 };
 
 /// Main UI rendering function
@@ -73,6 +73,12 @@ pub fn render(app: &App, frame: &mut Frame) {
         if let Some(ref data) = app.insights_data {
             let area = centered_rect(50, 55, frame.area());
             InsightsWidget::new(data).render(frame, area);
+        }
+    }
+    if app.mode == Mode::Focus {
+        if let Some(ref state) = app.focus_state {
+            let area = centered_rect(50, 40, frame.area());
+            FocusWidget::new(state).render(frame, area);
         }
     }
 
@@ -373,6 +379,7 @@ fn render_help(app: &App, frame: &mut Frame, area: Rect) {
         Mode::ViewingDetail => "Esc/q/v/Enter: close detail view",
         Mode::AddingCategory => "Enter:create  Esc:cancel",
         Mode::Insights => "Press any key to close",
+        Mode::Focus => "Space:pause  q/Esc:cancel  Enter:complete early",
         Mode::Normal => match app.current_view {
             View::Todos => {
                 "j/k:nav  a:add  d:done  x:del  e:edit  v:view  z:stash  Z:pop  u:undo  ?:help  q:quit"
@@ -433,6 +440,8 @@ fn render_help_modal(frame: &mut Frame) {
         Line::from("  c           Cycle category filter"),
         Line::from("  i           View insights"),
         Line::from("  n           Jump to recommended task"),
+        Line::from("  f           Start focus (25 min)"),
+        Line::from("  F           Quick focus (5 min)"),
         Line::from("  Esc         Close modal/cancel"),
         Line::from("  q           Quit"),
         Line::from(""),

@@ -30,6 +30,22 @@ pub async fn handle_key_event(app: &mut App, key: KeyEvent) -> Result<()> {
             app.mode = Mode::Normal;
             app.insights_data = None;
         }
+        Mode::Focus => {
+            match key.code {
+                KeyCode::Char(' ') => {
+                    if let Some(ref mut state) = app.focus_state {
+                        state.toggle_pause();
+                    }
+                }
+                KeyCode::Char('q') | KeyCode::Esc => {
+                    app.cancel_focus();
+                }
+                KeyCode::Enter => {
+                    app.complete_focus();
+                }
+                _ => {}
+            }
+        }
     }
 
     Ok(())
@@ -234,6 +250,18 @@ async fn handle_todos_view(app: &mut App, key: KeyEvent) -> Result<()> {
                 }
             } else {
                 app.status_message = Some("No tasks to recommend".to_string());
+            }
+        }
+
+        // Focus mode
+        KeyCode::Char('f') => {
+            if app.selected_todo().is_some() {
+                app.start_focus(25); // 25 minute pomodoro
+            }
+        }
+        KeyCode::Char('F') => {
+            if app.selected_todo().is_some() {
+                app.start_focus(5); // 5 minute quick focus
             }
         }
 

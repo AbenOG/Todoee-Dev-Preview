@@ -36,6 +36,59 @@ pub enum Mode {
     AddingFull,
     /// Viewing insights
     Insights,
+    /// Focus/pomodoro mode
+    Focus,
+}
+
+/// State for focus/pomodoro mode
+#[derive(Debug, Clone)]
+pub struct FocusState {
+    pub todo_id: uuid::Uuid,
+    pub todo_title: String,
+    pub duration_secs: u64,
+    pub started_at: std::time::Instant,
+    pub paused: bool,
+    pub paused_remaining: Option<u64>,
+}
+
+impl FocusState {
+    pub fn new(todo: &Todo, duration_mins: u64) -> Self {
+        Self {
+            todo_id: todo.id,
+            todo_title: todo.title.clone(),
+            duration_secs: duration_mins * 60,
+            started_at: std::time::Instant::now(),
+            paused: false,
+            paused_remaining: None,
+        }
+    }
+
+    pub fn remaining_secs(&self) -> u64 {
+        if self.paused {
+            self.paused_remaining.unwrap_or(0)
+        } else {
+            let elapsed = self.started_at.elapsed().as_secs();
+            self.duration_secs.saturating_sub(elapsed)
+        }
+    }
+
+    pub fn is_complete(&self) -> bool {
+        self.remaining_secs() == 0
+    }
+
+    pub fn toggle_pause(&mut self) {
+        if self.paused {
+            // Resume
+            self.started_at = std::time::Instant::now();
+            self.duration_secs = self.paused_remaining.unwrap_or(0);
+            self.paused = false;
+            self.paused_remaining = None;
+        } else {
+            // Pause
+            self.paused_remaining = Some(self.remaining_secs());
+            self.paused = true;
+        }
+    }
 }
 
 /// Productivity insights data
@@ -243,6 +296,8 @@ pub struct App {
     pub pending_priority: Option<Priority>,
     /// Insights data for the insights modal
     pub insights_data: Option<InsightsData>,
+    /// Focus/pomodoro state
+    pub focus_state: Option<FocusState>,
 }
 
 /// Calculate fuzzy match score (higher = better match)
@@ -324,6 +379,7 @@ impl App {
             loading_message: None,
             pending_priority: None,
             insights_data: None,
+            focus_state: None,
         };
 
         app.refresh_todos().await?;
@@ -971,5 +1027,34 @@ impl App {
             medium_priority_pending: med,
             low_priority_pending: low,
         })
+    }
+
+    /// Start focus mode with a timer for the selected todo
+    pub fn start_focus(&mut self, duration_mins: u64) {
+        if let Some(todo) = self.selected_todo() {
+            self.focus_state = Some(FocusState::new(todo, duration_mins));
+            self.mode = Mode::Focus;
+        }
+    }
+
+    /// Complete focus session and return to normal mode
+    pub fn complete_focus(&mut self) {
+        if let Some(ref state) = self.focus_state {
+            let todo_id = state.todo_id;
+            self.focus_state = None;
+            self.mode = Mode::Normal;
+            self.status_message = Some("Focus complete! Press 'd' to mark done.".to_string());
+            // Select the focused todo
+            if let Some(idx) = self.todos.iter().position(|t| t.id == todo_id) {
+                self.selected = idx;
+            }
+        }
+    }
+
+    /// Cancel focus session and return to normal mode
+    pub fn cancel_focus(&mut self) {
+        self.focus_state = None;
+        self.mode = Mode::Normal;
+        self.status_message = Some("Focus cancelled".to_string());
     }
 }
