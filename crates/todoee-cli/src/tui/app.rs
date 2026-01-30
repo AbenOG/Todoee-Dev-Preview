@@ -550,10 +550,10 @@ impl App {
         todo.reminder_at = reminder_at;
 
         // Category
-        if let Some(ref cat_name) = category_name {
-            if let Some(cat) = self.categories.iter().find(|c| &c.name == cat_name) {
-                todo.category_id = Some(cat.id);
-            }
+        if let Some(ref cat_name) = category_name
+            && let Some(cat) = self.categories.iter().find(|c| &c.name == cat_name)
+        {
+            todo.category_id = Some(cat.id);
         }
 
         self.db.create_todo(&todo).await?;
