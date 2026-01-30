@@ -8,6 +8,7 @@ pub mod edit;
 pub mod focus;
 pub mod gc;
 pub mod head;
+pub mod insights;
 pub mod list;
 pub mod now;
 pub mod log;

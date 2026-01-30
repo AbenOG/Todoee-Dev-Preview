@@ -193,6 +193,13 @@ enum Commands {
 
     /// Suggest what to work on right now
     Now,
+
+    /// Show productivity insights and analytics
+    Insights {
+        /// Number of days to analyze (default: 30)
+        #[arg(short, long)]
+        days: Option<i64>,
+    },
 }
 
 #[tokio::main]
@@ -285,6 +292,9 @@ async fn main() -> Result<()> {
         }
         Commands::Now => {
             commands::now::run().await?;
+        }
+        Commands::Insights { days } => {
+            commands::insights::run(days).await?;
         }
     }
 
