@@ -255,24 +255,33 @@ impl App {
 
     /// Mark selected todo as done
     pub async fn mark_selected_done(&mut self) -> Result<()> {
-        if let Some(todo) = self.todos.get_mut(self.selected) {
-            if !todo.is_completed {
-                todo.mark_complete();
-                self.db.update_todo(todo).await?;
-                self.status_message = Some(format!("✓ Completed: {}", todo.title));
-                self.refresh_todos().await?;
-            } else {
-                self.status_message = Some("Already completed".to_string());
-            }
+        // Check if selected todo exists and is not completed
+        let should_complete = self.todos.get(self.selected).is_some_and(|t| !t.is_completed);
+
+        if should_complete {
+            self.set_loading("Completing task...");
+            let todo = self.todos.get_mut(self.selected).unwrap();
+            todo.mark_complete();
+            let title = todo.title.clone();
+            self.db.update_todo(todo).await?;
+            self.clear_loading();
+            self.status_message = Some(format!("✓ Completed: {}", title));
+            self.refresh_todos().await?;
+        } else if self.todos.get(self.selected).is_some() {
+            self.status_message = Some("Already completed".to_string());
         }
         Ok(())
     }
 
     /// Delete selected todo
     pub async fn delete_selected(&mut self) -> Result<()> {
-        if let Some(todo) = self.todos.get(self.selected) {
-            let title = todo.title.clone();
-            self.db.delete_todo(todo.id).await?;
+        // Extract necessary data before borrowing self mutably
+        let todo_info = self.todos.get(self.selected).map(|t| (t.id, t.title.clone()));
+
+        if let Some((id, title)) = todo_info {
+            self.set_loading("Deleting task...");
+            self.db.delete_todo(id).await?;
+            self.clear_loading();
             self.status_message = Some(format!("✗ Deleted: {}", title));
             self.refresh_todos().await?;
         }
