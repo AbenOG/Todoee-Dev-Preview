@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use std::fs;
-use todoee_core::{Config, LocalDb, Todo};
+use todoee_core::{Config, EntityType, LocalDb, Operation, OperationType, Todo};
 
 pub async fn run(id: String) -> Result<()> {
     // Load config and open local database
@@ -31,6 +31,16 @@ pub async fn run(id: String) -> Result<()> {
         1 => {
             // Single match found
             let todo = matches.into_iter().next().unwrap();
+
+            // Record operation BEFORE deleting for undo support
+            let op = Operation::new(
+                OperationType::Delete,
+                EntityType::Todo,
+                todo.id,
+                Some(serde_json::to_value(&todo)?),
+                None,
+            );
+            db.record_operation(&op).await?;
 
             // Delete the todo
             db.delete_todo(todo.id).await?;

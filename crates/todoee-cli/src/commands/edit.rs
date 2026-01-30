@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use chrono::Utc;
 use std::fs;
-use todoee_core::{Category, Config, LocalDb, Priority, SyncStatus, Todo};
+use todoee_core::{Category, Config, EntityType, LocalDb, Operation, OperationType, Priority, SyncStatus, Todo};
 use uuid::Uuid;
 
 pub async fn run(
@@ -44,6 +44,9 @@ pub async fn run(
             // Single match found
             let mut todo = matches.into_iter().next().unwrap();
             let mut changes: Vec<String> = Vec::new();
+
+            // Save previous state for undo support
+            let prev_state = serde_json::to_value(&todo)?;
 
             // Update title if provided
             if let Some(new_title) = title {
@@ -89,6 +92,16 @@ pub async fn run(
 
             // Save to database
             db.update_todo(&todo).await?;
+
+            // Record operation for undo support
+            let op = Operation::new(
+                OperationType::Update,
+                EntityType::Todo,
+                todo.id,
+                Some(prev_state),
+                Some(serde_json::to_value(&todo)?),
+            );
+            db.record_operation(&op).await?;
 
             // Print confirmation
             println!("\u{270E} Updated: {}", todo.title);

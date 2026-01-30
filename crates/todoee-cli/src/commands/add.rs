@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use std::fs;
-use todoee_core::{AiClient, Category, Config, LocalDb, Priority, Todo};
+use todoee_core::{AiClient, Category, Config, EntityType, LocalDb, Operation, OperationType, Priority, Todo};
 use uuid::Uuid;
 
 pub async fn run(
@@ -65,6 +65,16 @@ pub async fn run(
 
     // Save todo to database
     db.create_todo(&todo).await?;
+
+    // Record operation for undo support
+    let op = Operation::new(
+        OperationType::Create,
+        EntityType::Todo,
+        todo.id,
+        None,
+        Some(serde_json::to_value(&todo)?),
+    );
+    db.record_operation(&op).await?;
 
     // Print confirmation with checkmark emoji
     println!("\u{2713} Created: {}", todo.title);

@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use std::fs;
-use todoee_core::{Config, LocalDb, Todo};
+use todoee_core::{Config, EntityType, LocalDb, Operation, OperationType, Todo};
 
 pub async fn run(id: String) -> Result<()> {
     // Load config and open local database
@@ -37,9 +37,22 @@ pub async fn run(id: String) -> Result<()> {
                 return Ok(());
             }
 
+            // Save previous state for undo support
+            let prev_state = serde_json::to_value(&todo)?;
+
             // Mark as complete
             todo.mark_complete();
             db.update_todo(&todo).await?;
+
+            // Record operation for undo support
+            let op = Operation::new(
+                if todo.is_completed { OperationType::Complete } else { OperationType::Uncomplete },
+                EntityType::Todo,
+                todo.id,
+                Some(prev_state),
+                None,
+            );
+            db.record_operation(&op).await?;
 
             println!("\u{2713} Completed: {}", todo.title);
             println!("  ID: {}", &todo.id.to_string()[..8]);
