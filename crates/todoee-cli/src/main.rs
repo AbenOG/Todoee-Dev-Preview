@@ -153,6 +153,12 @@ enum Commands {
         /// Search query
         query: String,
     },
+
+    /// Show detailed view of a todo
+    Show {
+        /// Todo ID (or prefix)
+        id: String,
+    },
 }
 
 #[tokio::main]
@@ -227,6 +233,9 @@ async fn main() -> Result<()> {
         }
         Commands::Search { query } => {
             commands::search::run(&query).await?;
+        }
+        Commands::Show { id } => {
+            commands::show::run(&id).await?;
         }
     }
 
