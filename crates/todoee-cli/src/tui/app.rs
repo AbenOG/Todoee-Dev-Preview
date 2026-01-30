@@ -503,7 +503,11 @@ impl App {
 
         if should_complete {
             self.set_loading("Completing task...");
-            let todo = self.todos.get_mut(self.selected).unwrap();
+            let Some(todo) = self.todos.get_mut(self.selected) else {
+                self.clear_loading();
+                self.status_message = Some("Task no longer available".to_string());
+                return Ok(());
+            };
 
             // Capture previous state
             let previous_state = serde_json::to_value(&*todo).ok();
