@@ -9,7 +9,7 @@ use chrono::Utc;
 use todoee_core::Priority;
 
 use super::app::{App, Mode, View};
-use super::widgets::{CategoryListWidget, SettingsWidget, TodoDetailWidget, TodoEditorWidget};
+use super::widgets::{CategoryListWidget, SettingsWidget, TodoAddWidget, TodoDetailWidget, TodoEditorWidget};
 
 /// Main UI rendering function
 pub fn render(app: &App, frame: &mut Frame) {
@@ -59,6 +59,12 @@ pub fn render(app: &App, frame: &mut Frame) {
     {
         let area = centered_rect(60, 50, frame.area());
         TodoEditorWidget::new(state).render(frame, area);
+    }
+    if app.mode == Mode::AddingFull
+        && let Some(ref state) = app.add_state
+    {
+        let area = centered_rect(65, 60, frame.area());
+        TodoAddWidget::new(state).render(frame, area);
     }
 
     // Loading overlay (always on top)
