@@ -1,0 +1,17 @@
+[package]
+name = "todoee-daemon"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "todoee-daemon"
+path = "src/main.rs"
+
+[dependencies]
+todoee-core = { path = "../todoee-core" }
+tokio.workspace = true
+serde.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+notify-rust = "4"
