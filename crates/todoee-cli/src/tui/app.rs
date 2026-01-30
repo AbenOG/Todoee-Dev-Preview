@@ -1,5 +1,6 @@
 use anyhow::Result;
-use todoee_core::{Config, LocalDb, Todo, Category, Priority};
+use chrono::{Duration, Local, NaiveDate, NaiveDateTime, TimeZone, Utc};
+use todoee_core::{Category, Config, LocalDb, Priority, Todo};
 use tui_input::Input;
 
 /// Main view/tab of the application
@@ -137,6 +138,39 @@ impl AddState {
     pub fn is_valid(&self) -> bool {
         !self.title.trim().is_empty()
     }
+}
+
+/// Parse a date string that can be:
+/// - Absolute: "2026-01-30"
+/// - Relative: "today", "tomorrow", "+3d", "+1w"
+fn parse_due_date(input: &str) -> Option<chrono::DateTime<Utc>> {
+    let input = input.trim().to_lowercase();
+    let today = Local::now().date_naive();
+
+    let date = match input.as_str() {
+        "today" => today,
+        "tomorrow" => today + Duration::days(1),
+        s if s.starts_with('+') && s.ends_with('d') => {
+            let days: i64 = s[1..s.len() - 1].parse().ok()?;
+            today + Duration::days(days)
+        }
+        s if s.starts_with('+') && s.ends_with('w') => {
+            let weeks: i64 = s[1..s.len() - 1].parse().ok()?;
+            today + Duration::weeks(weeks)
+        }
+        _ => NaiveDate::parse_from_str(&input, "%Y-%m-%d").ok()?,
+    };
+
+    date.and_hms_opt(12, 0, 0)
+        .map(|dt| Utc.from_utc_datetime(&dt))
+}
+
+/// Parse a reminder datetime string: "2026-01-30 14:00"
+fn parse_reminder(input: &str) -> Option<chrono::DateTime<Utc>> {
+    let input = input.trim();
+    NaiveDateTime::parse_from_str(input, "%Y-%m-%d %H:%M")
+        .ok()
+        .map(|dt| Utc.from_utc_datetime(&dt))
 }
 
 /// Filter state for the task list
@@ -489,8 +523,44 @@ impl App {
         Ok(())
     }
 
-    /// Create a new todo from add state (stub - will be implemented in Task 5)
+    /// Create a todo from the current add state
     pub async fn create_todo_from_add_state(&mut self) -> Result<()> {
+        let Some(ref state) = self.add_state else {
+            return Ok(());
+        };
+
+        // Extract all needed data from state before mutating self
+        let title = state.title.trim().to_string();
+        let description = if state.description.is_empty() {
+            None
+        } else {
+            Some(state.description.clone())
+        };
+        let priority = state.priority;
+        let due_date = state.due_date.as_ref().and_then(|s| parse_due_date(s));
+        let reminder_at = state.reminder.as_ref().and_then(|s| parse_reminder(s));
+        let category_name = state.category_name.clone();
+
+        self.set_loading("Creating task...");
+
+        let mut todo = Todo::new(title.clone(), None);
+        todo.description = description;
+        todo.priority = priority;
+        todo.due_date = due_date;
+        todo.reminder_at = reminder_at;
+
+        // Category
+        if let Some(ref cat_name) = category_name {
+            if let Some(cat) = self.categories.iter().find(|c| &c.name == cat_name) {
+                todo.category_id = Some(cat.id);
+            }
+        }
+
+        self.db.create_todo(&todo).await?;
+        self.clear_loading();
+        self.status_message = Some(format!("✓ Added: {}", title));
+        self.refresh_todos().await?;
+
         Ok(())
     }
 }
