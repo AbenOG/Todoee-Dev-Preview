@@ -4,7 +4,7 @@ use tui_input::backend::crossterm::EventHandler as InputHandler;
 use chrono::TimeZone;
 use todoee_core::Priority;
 
-use super::app::{App, EditField, EditState, Mode};
+use super::app::{App, EditField, EditState, Mode, View};
 
 /// Handle key events and update app state
 pub async fn handle_key_event(app: &mut App, key: KeyEvent) -> Result<()> {
@@ -25,10 +25,28 @@ pub async fn handle_key_event(app: &mut App, key: KeyEvent) -> Result<()> {
 }
 
 async fn handle_normal_mode(app: &mut App, key: KeyEvent) -> Result<()> {
+    // View switching always available
     match key.code {
-        // Quit
-        KeyCode::Char('q') | KeyCode::Esc => app.quit(),
+        KeyCode::Char('1') => { app.current_view = View::Todos; return Ok(()); }
+        KeyCode::Char('2') => { app.current_view = View::Categories; return Ok(()); }
+        KeyCode::Char('3') => { app.current_view = View::Settings; return Ok(()); }
+        KeyCode::Char('q') | KeyCode::Esc => { app.quit(); return Ok(()); }
+        KeyCode::Char('?') => { app.mode = Mode::Help; return Ok(()); }
+        _ => {}
+    }
 
+    // View-specific handling
+    match app.current_view {
+        View::Todos => handle_todos_view(app, key).await?,
+        View::Categories => handle_categories_view(app, key).await?,
+        View::Settings => handle_settings_view(app, key)?,
+    }
+
+    Ok(())
+}
+
+async fn handle_todos_view(app: &mut App, key: KeyEvent) -> Result<()> {
+    match key.code {
         // Navigation
         KeyCode::Char('j') | KeyCode::Down => app.select_next(),
         KeyCode::Char('k') | KeyCode::Up => app.select_previous(),
@@ -54,6 +72,11 @@ async fn handle_normal_mode(app: &mut App, key: KeyEvent) -> Result<()> {
             if let Some(todo) = app.selected_todo() {
                 app.edit_state = Some(EditState::from_todo(todo));
                 app.mode = Mode::EditingFull;
+            }
+        }
+        KeyCode::Char('v') | KeyCode::Char(' ') => {
+            if app.selected_todo().is_some() {
+                app.mode = Mode::ViewingDetail;
             }
         }
 
@@ -89,21 +112,30 @@ async fn handle_normal_mode(app: &mut App, key: KeyEvent) -> Result<()> {
             app.refresh_todos().await?;
         }
 
-        // Help
-        KeyCode::Char('?') => {
-            app.mode = Mode::Help;
-        }
-
-        // View detail
-        KeyCode::Char('v') | KeyCode::Char(' ') => {
-            if app.selected_todo().is_some() {
-                app.mode = Mode::ViewingDetail;
-            }
-        }
-
         _ => {}
     }
+    Ok(())
+}
 
+async fn handle_categories_view(app: &mut App, key: KeyEvent) -> Result<()> {
+    match key.code {
+        KeyCode::Char('j') | KeyCode::Down => {
+            if app.category_selected < app.categories.len().saturating_sub(1) {
+                app.category_selected += 1;
+            }
+        }
+        KeyCode::Char('k') | KeyCode::Up => {
+            if app.category_selected > 0 {
+                app.category_selected -= 1;
+            }
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
+fn handle_settings_view(_app: &mut App, _key: KeyEvent) -> Result<()> {
+    // Settings navigation - to be implemented in later tasks
     Ok(())
 }
 

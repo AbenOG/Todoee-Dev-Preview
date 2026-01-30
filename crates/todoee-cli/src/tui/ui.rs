@@ -8,40 +8,52 @@ use ratatui::{
 use chrono::Utc;
 use todoee_core::Priority;
 
-use super::app::{App, Mode};
-use super::widgets::{TodoDetailWidget, TodoEditorWidget};
+use super::app::{App, Mode, View};
+use super::widgets::{CategoryListWidget, TodoDetailWidget, TodoEditorWidget};
 
 /// Main UI rendering function
 pub fn render(app: &App, frame: &mut Frame) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),  // Header
-            Constraint::Length(3),  // Input
-            Constraint::Min(10),    // Task list
+            Constraint::Length(3),  // Tab bar
+            Constraint::Length(3),  // Header/Input
+            Constraint::Min(10),    // Content
             Constraint::Length(3),  // Status bar
             Constraint::Length(1),  // Help line
         ])
         .split(frame.area());
 
-    render_header(app, frame, chunks[0]);
-    render_input(app, frame, chunks[1]);
-    render_tasks(app, frame, chunks[2]);
+    render_tabs(app, frame, chunks[0]);
+
+    match app.current_view {
+        View::Todos => {
+            render_input(app, frame, chunks[1]);
+            render_tasks(app, frame, chunks[2]);
+        }
+        View::Categories => {
+            render_category_header(app, frame, chunks[1]);
+            render_categories(app, frame, chunks[2]);
+        }
+        View::Settings => {
+            render_settings_header(app, frame, chunks[1]);
+            render_settings_content(app, frame, chunks[2]);
+        }
+    }
+
     render_status(app, frame, chunks[3]);
     render_help(app, frame, chunks[4]);
 
-    // Render modal overlays
+    // Modals
     if app.mode == Mode::Help {
         render_help_modal(frame);
     }
-
     if app.mode == Mode::ViewingDetail {
         if let Some(todo) = app.selected_todo() {
             let area = centered_rect(70, 80, frame.area());
             TodoDetailWidget::new(todo).render(frame, area);
         }
     }
-
     if app.mode == Mode::EditingFull {
         if let Some(ref state) = app.edit_state {
             let area = centered_rect(60, 50, frame.area());
@@ -50,31 +62,63 @@ pub fn render(app: &App, frame: &mut Frame) {
     }
 }
 
-fn render_header(app: &App, frame: &mut Frame, area: Rect) {
-    let title = format!(
-        " todoee {} ",
-        if app.filter.today_only { "[TODAY]" } else { "" }
-    );
+fn render_tabs(app: &App, frame: &mut Frame, area: Rect) {
+    let tabs = vec![
+        ("1: Todos", View::Todos),
+        ("2: Categories", View::Categories),
+        ("3: Settings", View::Settings),
+    ];
 
-    let filter_info = if !app.filter.search_query.is_empty() {
-        format!(" 🔍 \"{}\" ", app.filter.search_query)
-    } else if let Some(ref cat) = app.filter.category {
-        format!(" 📁 {} ", cat)
-    } else {
-        String::new()
-    };
+    let spans: Vec<Span> = tabs
+        .iter()
+        .flat_map(|(label, view)| {
+            let style = if app.current_view == *view {
+                Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD | Modifier::UNDERLINED)
+            } else {
+                Style::default().fg(Color::DarkGray)
+            };
+            vec![Span::styled(format!(" {} ", label), style), Span::raw("  ")]
+        })
+        .collect();
 
+    let tabs_line = Paragraph::new(Line::from(spans))
+        .block(
+            Block::default()
+                .borders(Borders::BOTTOM)
+                .border_style(Style::default().fg(Color::DarkGray))
+        );
+
+    frame.render_widget(tabs_line, area);
+}
+
+fn render_category_header(_app: &App, frame: &mut Frame, area: Rect) {
     let header = Paragraph::new(Line::from(vec![
-        Span::styled(title, Style::default().fg(Color::Cyan).bold()),
-        Span::raw(filter_info),
+        Span::styled(" Categories ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+        Span::styled("  a", Style::default().fg(Color::Yellow)),
+        Span::raw(":add  "),
+        Span::styled("x", Style::default().fg(Color::Yellow)),
+        Span::raw(":delete"),
     ]))
-    .block(
-        Block::default()
-            .borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::DarkGray))
-    );
-
+    .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(Color::DarkGray)));
     frame.render_widget(header, area);
+}
+
+fn render_categories(app: &App, frame: &mut Frame, area: Rect) {
+    CategoryListWidget::new(&app.categories, app.category_selected).render(frame, area);
+}
+
+fn render_settings_header(_app: &App, frame: &mut Frame, area: Rect) {
+    let header = Paragraph::new(" Settings ")
+        .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
+        .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(Color::DarkGray)));
+    frame.render_widget(header, area);
+}
+
+fn render_settings_content(_app: &App, frame: &mut Frame, area: Rect) {
+    let placeholder = Paragraph::new("Settings panel - use j/k to navigate sections")
+        .style(Style::default().fg(Color::DarkGray))
+        .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(Color::DarkGray)));
+    frame.render_widget(placeholder, area);
 }
 
 fn render_input(app: &App, frame: &mut Frame, area: Rect) {
@@ -229,12 +273,17 @@ fn render_status(app: &App, frame: &mut Frame, area: Rect) {
 
 fn render_help(app: &App, frame: &mut Frame, area: Rect) {
     let help_text = match app.mode {
-        Mode::Adding | Mode::Editing => "Enter:submit  Esc:cancel",
+        Mode::Adding => "Enter:submit  Esc:cancel",
+        Mode::Editing => "Enter:submit  Esc:cancel",
         Mode::EditingFull => "Tab:next  Shift+Tab:prev  Enter:save  Esc:cancel",
         Mode::Searching => "Enter:apply  Esc:cancel  Ctrl+U:clear",
         Mode::Help => "Press any key to close",
         Mode::ViewingDetail => "Esc/q/v/Enter: close detail view",
-        Mode::Normal => "j/k:nav  a:add  d:done  x:del  e:edit  v:view  /:search  t:today  ?:help  q:quit",
+        Mode::Normal => match app.current_view {
+            View::Todos => "j/k:nav  a:add  d:done  x:del  e:edit  v:view  /:search  1/2/3:tabs  q:quit",
+            View::Categories => "j/k:nav  a:add  x:delete  1/2/3:tabs  q:quit",
+            View::Settings => "j/k:nav  1/2/3:tabs  q:quit",
+        },
     };
 
     let help = Paragraph::new(Span::styled(help_text, Style::default().fg(Color::DarkGray)));
