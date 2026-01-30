@@ -1,6 +1,6 @@
 use anyhow::Result;
 use chrono::{Duration, Local, NaiveDate, NaiveDateTime, TimeZone, Utc};
-use todoee_core::{Category, Config, LocalDb, Priority, Todo};
+use todoee_core::{Category, Config, EntityType, LocalDb, Operation, OperationType, Priority, Todo};
 use tui_input::Input;
 
 /// Main view/tab of the application
@@ -94,7 +94,7 @@ pub struct EditState {
     pub title: String,
     pub description: String,
     pub priority: Priority,
-    pub due_date: Option<String>,  // Store as string for editing
+    pub due_date: Option<String>, // Store as string for editing
     pub category_name: Option<String>,
     pub active_field: EditField,
 }
@@ -102,7 +102,10 @@ pub struct EditState {
 impl EditState {
     pub fn from_todo(todo: &Todo, categories: &[Category]) -> Self {
         let category_name = todo.category_id.and_then(|id| {
-            categories.iter().find(|c| c.id == id).map(|c| c.name.clone())
+            categories
+                .iter()
+                .find(|c| c.id == id)
+                .map(|c| c.name.clone())
         });
         Self {
             todo_id: todo.id,
@@ -123,8 +126,8 @@ pub struct AddState {
     pub title: String,
     pub description: String,
     pub priority: Priority,
-    pub due_date: Option<String>,      // YYYY-MM-DD format
-    pub reminder: Option<String>,      // YYYY-MM-DD HH:MM format
+    pub due_date: Option<String>, // YYYY-MM-DD format
+    pub reminder: Option<String>, // YYYY-MM-DD HH:MM format
     pub category_name: Option<String>,
     pub active_field: AddField,
 }
@@ -276,7 +279,8 @@ impl App {
         // Apply search filter
         if !self.filter.search_query.is_empty() {
             let query = self.filter.search_query.to_lowercase();
-            self.todos.retain(|t| t.title.to_lowercase().contains(&query));
+            self.todos
+                .retain(|t| t.title.to_lowercase().contains(&query));
         }
 
         // Apply priority filter
@@ -286,14 +290,30 @@ impl App {
 
         // Sort todos
         match (self.filter.sort_by, self.filter.sort_order) {
-            (SortBy::CreatedAt, SortOrder::Ascending) => self.todos.sort_by(|a, b| a.created_at.cmp(&b.created_at)),
-            (SortBy::CreatedAt, SortOrder::Descending) => self.todos.sort_by(|a, b| b.created_at.cmp(&a.created_at)),
-            (SortBy::DueDate, SortOrder::Ascending) => self.todos.sort_by(|a, b| a.due_date.cmp(&b.due_date)),
-            (SortBy::DueDate, SortOrder::Descending) => self.todos.sort_by(|a, b| b.due_date.cmp(&a.due_date)),
-            (SortBy::Priority, SortOrder::Ascending) => self.todos.sort_by(|a, b| a.priority.cmp(&b.priority)),
-            (SortBy::Priority, SortOrder::Descending) => self.todos.sort_by(|a, b| b.priority.cmp(&a.priority)),
-            (SortBy::Title, SortOrder::Ascending) => self.todos.sort_by(|a, b| a.title.to_lowercase().cmp(&b.title.to_lowercase())),
-            (SortBy::Title, SortOrder::Descending) => self.todos.sort_by(|a, b| b.title.to_lowercase().cmp(&a.title.to_lowercase())),
+            (SortBy::CreatedAt, SortOrder::Ascending) => {
+                self.todos.sort_by(|a, b| a.created_at.cmp(&b.created_at))
+            }
+            (SortBy::CreatedAt, SortOrder::Descending) => {
+                self.todos.sort_by(|a, b| b.created_at.cmp(&a.created_at))
+            }
+            (SortBy::DueDate, SortOrder::Ascending) => {
+                self.todos.sort_by(|a, b| a.due_date.cmp(&b.due_date))
+            }
+            (SortBy::DueDate, SortOrder::Descending) => {
+                self.todos.sort_by(|a, b| b.due_date.cmp(&a.due_date))
+            }
+            (SortBy::Priority, SortOrder::Ascending) => {
+                self.todos.sort_by(|a, b| a.priority.cmp(&b.priority))
+            }
+            (SortBy::Priority, SortOrder::Descending) => {
+                self.todos.sort_by(|a, b| b.priority.cmp(&a.priority))
+            }
+            (SortBy::Title, SortOrder::Ascending) => self
+                .todos
+                .sort_by(|a, b| a.title.to_lowercase().cmp(&b.title.to_lowercase())),
+            (SortBy::Title, SortOrder::Descending) => self
+                .todos
+                .sort_by(|a, b| b.title.to_lowercase().cmp(&a.title.to_lowercase())),
         }
 
         // Ensure selected index is valid
@@ -332,7 +352,10 @@ impl App {
     /// Mark selected todo as done
     pub async fn mark_selected_done(&mut self) -> Result<()> {
         // Check if selected todo exists and is not completed
-        let should_complete = self.todos.get(self.selected).is_some_and(|t| !t.is_completed);
+        let should_complete = self
+            .todos
+            .get(self.selected)
+            .is_some_and(|t| !t.is_completed);
 
         if should_complete {
             self.set_loading("Completing task...");
@@ -352,7 +375,10 @@ impl App {
     /// Delete selected todo
     pub async fn delete_selected(&mut self) -> Result<()> {
         // Extract necessary data before borrowing self mutably
-        let todo_info = self.todos.get(self.selected).map(|t| (t.id, t.title.clone()));
+        let todo_info = self
+            .todos
+            .get(self.selected)
+            .map(|t| (t.id, t.title.clone()));
 
         if let Some((id, title)) = todo_info {
             self.set_loading("Deleting task...");
@@ -518,6 +544,154 @@ impl App {
             self.refresh_categories().await?;
             if self.category_selected >= self.categories.len() && !self.categories.is_empty() {
                 self.category_selected = self.categories.len() - 1;
+            }
+        }
+        Ok(())
+    }
+
+    /// Undo the last operation
+    pub async fn undo(&mut self) -> Result<()> {
+        let Some(op) = self.db.get_last_undoable_operation().await? else {
+            self.status_message = Some("Nothing to undo".to_string());
+            return Ok(());
+        };
+
+        // Only handle Todo operations for now
+        if op.entity_type != EntityType::Todo {
+            self.status_message = Some("Cannot undo category operations yet".to_string());
+            return Ok(());
+        }
+
+        self.apply_undo(&op).await?;
+        self.db.mark_operation_undone(op.id).await?;
+
+        let op_name = match op.operation_type {
+            OperationType::Create => "create",
+            OperationType::Update => "update",
+            OperationType::Delete => "delete",
+            OperationType::Complete => "complete",
+            OperationType::Uncomplete => "uncomplete",
+            OperationType::Stash => "stash",
+            OperationType::Unstash => "unstash",
+        };
+        self.status_message = Some(format!("↶ Undone: {}", op_name));
+        self.refresh_todos().await?;
+
+        Ok(())
+    }
+
+    /// Apply the reverse of an operation
+    async fn apply_undo(&mut self, op: &Operation) -> Result<()> {
+        match op.operation_type {
+            OperationType::Create => {
+                // Undo create by deleting the entity
+                self.db.delete_todo(op.entity_id).await?;
+            }
+            OperationType::Delete => {
+                // Undo delete by restoring from previous_state
+                if let Some(ref state) = op.previous_state {
+                    let todo: Todo = serde_json::from_value(state.clone())?;
+                    self.db.create_todo(&todo).await?;
+                }
+            }
+            OperationType::Update => {
+                // Undo update by restoring previous_state
+                if let Some(ref state) = op.previous_state {
+                    let todo: Todo = serde_json::from_value(state.clone())?;
+                    self.db.update_todo(&todo).await?;
+                }
+            }
+            OperationType::Complete => {
+                // Undo complete by marking as incomplete
+                if let Some(mut todo) = self.db.get_todo(op.entity_id).await? {
+                    todo.is_completed = false;
+                    todo.completed_at = None;
+                    self.db.update_todo(&todo).await?;
+                }
+            }
+            OperationType::Uncomplete => {
+                // Undo uncomplete by marking as complete
+                if let Some(mut todo) = self.db.get_todo(op.entity_id).await? {
+                    todo.mark_complete();
+                    self.db.update_todo(&todo).await?;
+                }
+            }
+            OperationType::Stash | OperationType::Unstash => {
+                // Stash operations not yet implemented in Todo model
+            }
+        }
+        Ok(())
+    }
+
+    /// Redo the last undone operation
+    pub async fn redo(&mut self) -> Result<()> {
+        let Some(op) = self.db.get_last_redoable_operation().await? else {
+            self.status_message = Some("Nothing to redo".to_string());
+            return Ok(());
+        };
+
+        // Only handle Todo operations for now
+        if op.entity_type != EntityType::Todo {
+            self.status_message = Some("Cannot redo category operations yet".to_string());
+            return Ok(());
+        }
+
+        self.apply_redo(&op).await?;
+        self.db.mark_operation_redone(op.id).await?;
+
+        let op_name = match op.operation_type {
+            OperationType::Create => "create",
+            OperationType::Update => "update",
+            OperationType::Delete => "delete",
+            OperationType::Complete => "complete",
+            OperationType::Uncomplete => "uncomplete",
+            OperationType::Stash => "stash",
+            OperationType::Unstash => "unstash",
+        };
+        self.status_message = Some(format!("↷ Redone: {}", op_name));
+        self.refresh_todos().await?;
+
+        Ok(())
+    }
+
+    /// Re-apply an operation
+    async fn apply_redo(&mut self, op: &Operation) -> Result<()> {
+        match op.operation_type {
+            OperationType::Create => {
+                // Redo create by creating from new_state
+                if let Some(ref state) = op.new_state {
+                    let todo: Todo = serde_json::from_value(state.clone())?;
+                    self.db.create_todo(&todo).await?;
+                }
+            }
+            OperationType::Delete => {
+                // Redo delete by deleting the entity
+                self.db.delete_todo(op.entity_id).await?;
+            }
+            OperationType::Update => {
+                // Redo update by applying new_state
+                if let Some(ref state) = op.new_state {
+                    let todo: Todo = serde_json::from_value(state.clone())?;
+                    self.db.update_todo(&todo).await?;
+                }
+            }
+            OperationType::Complete => {
+                // Redo complete by marking as complete
+                if let Some(mut todo) = self.db.get_todo(op.entity_id).await? {
+                    todo.mark_complete();
+                    self.db.update_todo(&todo).await?;
+                }
+            }
+            OperationType::Uncomplete => {
+                // Redo uncomplete by marking as incomplete
+                if let Some(mut todo) = self.db.get_todo(op.entity_id).await? {
+                    todo.is_completed = false;
+                    todo.completed_at = None;
+                    self.db.update_todo(&todo).await?;
+                }
+            }
+            OperationType::Stash | OperationType::Unstash => {
+                // Stash operations not yet implemented in Todo model
             }
         }
         Ok(())

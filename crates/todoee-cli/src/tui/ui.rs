@@ -1,26 +1,28 @@
+use chrono::Utc;
 use ratatui::{
+    Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style, Stylize},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
-    Frame,
 };
-use chrono::Utc;
 use todoee_core::Priority;
 
 use super::app::{App, Mode, View};
-use super::widgets::{CategoryListWidget, SettingsWidget, TodoAddWidget, TodoDetailWidget, TodoEditorWidget};
+use super::widgets::{
+    CategoryListWidget, SettingsWidget, TodoAddWidget, TodoDetailWidget, TodoEditorWidget,
+};
 
 /// Main UI rendering function
 pub fn render(app: &App, frame: &mut Frame) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),  // Tab bar
-            Constraint::Length(3),  // Header/Input
-            Constraint::Min(10),    // Content
-            Constraint::Length(3),  // Status bar
-            Constraint::Length(1),  // Help line
+            Constraint::Length(3), // Tab bar
+            Constraint::Length(3), // Header/Input
+            Constraint::Min(10),   // Content
+            Constraint::Length(3), // Status bar
+            Constraint::Length(1), // Help line
         ])
         .split(frame.area());
 
@@ -84,7 +86,9 @@ fn render_tabs(app: &App, frame: &mut Frame, area: Rect) {
         .iter()
         .flat_map(|(label, view)| {
             let style = if app.current_view == *view {
-                Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD | Modifier::UNDERLINED)
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD | Modifier::UNDERLINED)
             } else {
                 Style::default().fg(Color::DarkGray)
             };
@@ -101,15 +105,17 @@ fn render_tabs(app: &App, frame: &mut Frame, area: Rect) {
             Priority::Medium => ("MEDIUM", Color::Yellow),
             Priority::Low => ("LOW", Color::Green),
         };
-        spans.push(Span::styled(format!(" [{}] ", text), Style::default().fg(color)));
+        spans.push(Span::styled(
+            format!(" [{}] ", text),
+            Style::default().fg(color),
+        ));
     }
 
-    let tabs_line = Paragraph::new(Line::from(spans))
-        .block(
-            Block::default()
-                .borders(Borders::BOTTOM)
-                .border_style(Style::default().fg(Color::DarkGray))
-        );
+    let tabs_line = Paragraph::new(Line::from(spans)).block(
+        Block::default()
+            .borders(Borders::BOTTOM)
+            .border_style(Style::default().fg(Color::DarkGray)),
+    );
 
     frame.render_widget(tabs_line, area);
 }
@@ -121,17 +127,30 @@ fn render_category_header(app: &App, frame: &mut Frame, area: Rect) {
             Span::raw(app.input.value()),
             Span::styled("|", Style::default().fg(Color::White)),
         ]))
-        .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(Color::Cyan)));
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::Cyan)),
+        );
         frame.render_widget(input, area);
     } else {
         let header = Paragraph::new(Line::from(vec![
-            Span::styled(" Categories ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                " Categories ",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::styled("  a", Style::default().fg(Color::Yellow)),
             Span::raw(":add  "),
             Span::styled("x", Style::default().fg(Color::Yellow)),
             Span::raw(":delete"),
         ]))
-        .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(Color::DarkGray)));
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::DarkGray)),
+        );
         frame.render_widget(header, area);
     }
 }
@@ -142,8 +161,16 @@ fn render_categories(app: &App, frame: &mut Frame, area: Rect) {
 
 fn render_settings_header(_app: &App, frame: &mut Frame, area: Rect) {
     let header = Paragraph::new(" Settings ")
-        .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
-        .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(Color::DarkGray)));
+        .style(
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::DarkGray)),
+        );
     frame.render_widget(header, area);
 }
 
@@ -178,27 +205,28 @@ fn render_input(app: &App, frame: &mut Frame, area: Rect) {
         Span::raw("")
     };
 
-    let mut spans = vec![
-        Span::styled(prompt, style),
-        Span::raw(input_text),
-    ];
+    let mut spans = vec![Span::styled(prompt, style), Span::raw(input_text)];
 
     if matches!(app.mode, Mode::Adding | Mode::Searching | Mode::Editing) {
-        spans.push(Span::styled("│", Style::default().fg(Color::White).add_modifier(Modifier::SLOW_BLINK)));
+        spans.push(Span::styled(
+            "│",
+            Style::default()
+                .fg(Color::White)
+                .add_modifier(Modifier::SLOW_BLINK),
+        ));
     }
 
     spans.push(priority_indicator);
 
-    let input = Paragraph::new(Line::from(spans))
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(if matches!(app.mode, Mode::Adding | Mode::Searching | Mode::Editing) {
-                    Style::default().fg(Color::Cyan)
-                } else {
-                    Style::default().fg(Color::DarkGray)
-                })
-        );
+    let input = Paragraph::new(Line::from(spans)).block(
+        Block::default().borders(Borders::ALL).border_style(
+            if matches!(app.mode, Mode::Adding | Mode::Searching | Mode::Editing) {
+                Style::default().fg(Color::Cyan)
+            } else {
+                Style::default().fg(Color::DarkGray)
+            },
+        ),
+    );
 
     frame.render_widget(input, area);
 }
@@ -232,17 +260,16 @@ fn render_tasks(app: &App, frame: &mut Frame, area: Rect) {
                 match days_until {
                     d if d < 0 => Span::styled(
                         format!(" [OVERDUE {}d]", -d),
-                        Style::default().fg(Color::Red).bold()
+                        Style::default().fg(Color::Red).bold(),
                     ),
                     0 => Span::styled(" [TODAY]", Style::default().fg(Color::Yellow).bold()),
                     1 => Span::styled(" [Tomorrow]", Style::default().fg(Color::Cyan)),
-                    d if d <= 7 => Span::styled(
-                        format!(" [{}d]", d),
-                        Style::default().fg(Color::Blue)
-                    ),
+                    d if d <= 7 => {
+                        Span::styled(format!(" [{}d]", d), Style::default().fg(Color::Blue))
+                    }
                     _ => Span::styled(
                         format!(" [{}]", due.format("%m/%d")),
-                        Style::default().fg(Color::DarkGray)
+                        Style::default().fg(Color::DarkGray),
                     ),
                 }
             } else {
@@ -262,11 +289,14 @@ fn render_tasks(app: &App, frame: &mut Frame, area: Rect) {
 
             let content = Line::from(vec![
                 Span::styled(selector, Style::default().fg(Color::Cyan)),
-                Span::styled(status, if todo.is_completed {
-                    Style::default().fg(Color::Green)
-                } else {
-                    Style::default()
-                }),
+                Span::styled(
+                    status,
+                    if todo.is_completed {
+                        Style::default().fg(Color::Green)
+                    } else {
+                        Style::default()
+                    },
+                ),
                 Span::raw(" "),
                 priority,
                 Span::raw(" "),
@@ -276,9 +306,12 @@ fn render_tasks(app: &App, frame: &mut Frame, area: Rect) {
                         Style::default().add_modifier(Modifier::CROSSED_OUT)
                     } else {
                         Style::default()
-                    }
+                    },
                 ),
-                Span::styled(format!("  {}", short_id), Style::default().fg(Color::DarkGray)),
+                Span::styled(
+                    format!("  {}", short_id),
+                    Style::default().fg(Color::DarkGray),
+                ),
                 due_str,
             ]);
 
@@ -286,13 +319,12 @@ fn render_tasks(app: &App, frame: &mut Frame, area: Rect) {
         })
         .collect();
 
-    let tasks = List::new(items)
-        .block(
-            Block::default()
-                .title(format!(" Tasks ({}) ", app.todos.len()))
-                .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::DarkGray))
-        );
+    let tasks = List::new(items).block(
+        Block::default()
+            .title(format!(" Tasks ({}) ", app.todos.len()))
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::DarkGray)),
+    );
 
     frame.render_widget(tasks, area);
 }
@@ -307,12 +339,11 @@ fn render_status(app: &App, frame: &mut Frame, area: Rect) {
         Style::default().fg(Color::Yellow)
     };
 
-    let status = Paragraph::new(Span::styled(status_text, status_style))
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::DarkGray))
-        );
+    let status = Paragraph::new(Span::styled(status_text, status_style)).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::DarkGray)),
+    );
 
     frame.render_widget(status, area);
 }
@@ -328,13 +359,18 @@ fn render_help(app: &App, frame: &mut Frame, area: Rect) {
         Mode::ViewingDetail => "Esc/q/v/Enter: close detail view",
         Mode::AddingCategory => "Enter:create  Esc:cancel",
         Mode::Normal => match app.current_view {
-            View::Todos => "j/k:nav  a:add  d:done  x:del  e:edit  v:view  p:priority  /:search  1/2/3:tabs  q:quit",
+            View::Todos => {
+                "j/k:nav  a:add  d:done  x:del  e:edit  v:view  u:undo  ^r:redo  /:search  ?:help  q:quit"
+            }
             View::Categories => "j/k:nav  a:add  x:delete  1/2/3:tabs  q:quit",
             View::Settings => "j/k:nav sections  r:reload config  1/2/3:tabs  q:quit",
         },
     };
 
-    let help = Paragraph::new(Span::styled(help_text, Style::default().fg(Color::DarkGray)));
+    let help = Paragraph::new(Span::styled(
+        help_text,
+        Style::default().fg(Color::DarkGray),
+    ));
     frame.render_widget(help, area);
 }
 
@@ -368,6 +404,8 @@ fn render_help_modal(frame: &mut Frame) {
         Line::from("  Enter       Toggle complete"),
         Line::from("  d           Mark as done"),
         Line::from("  x           Delete todo"),
+        Line::from("  u           Undo last action"),
+        Line::from("  Ctrl+r      Redo last undone action"),
         Line::from("  /           Search"),
         Line::from("  p           Cycle priority filter"),
         Line::from("  s           Cycle sort field"),

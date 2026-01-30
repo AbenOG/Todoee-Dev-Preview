@@ -1,10 +1,12 @@
 use anyhow::Result;
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use tui_input::backend::crossterm::EventHandler as InputHandler;
 use chrono::TimeZone;
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use todoee_core::Priority;
+use tui_input::backend::crossterm::EventHandler as InputHandler;
 
-use super::app::{AddField, AddState, App, EditField, EditState, Mode, SettingsSection, SortBy, SortOrder, View};
+use super::app::{
+    AddField, AddState, App, EditField, EditState, Mode, SettingsSection, SortBy, SortOrder, View,
+};
 use todoee_core::Config;
 
 /// Handle key events and update app state
@@ -30,11 +32,26 @@ pub async fn handle_key_event(app: &mut App, key: KeyEvent) -> Result<()> {
 async fn handle_normal_mode(app: &mut App, key: KeyEvent) -> Result<()> {
     // View switching always available
     match key.code {
-        KeyCode::Char('1') => { app.current_view = View::Todos; return Ok(()); }
-        KeyCode::Char('2') => { app.current_view = View::Categories; return Ok(()); }
-        KeyCode::Char('3') => { app.current_view = View::Settings; return Ok(()); }
-        KeyCode::Char('q') | KeyCode::Esc => { app.quit(); return Ok(()); }
-        KeyCode::Char('?') => { app.mode = Mode::Help; return Ok(()); }
+        KeyCode::Char('1') => {
+            app.current_view = View::Todos;
+            return Ok(());
+        }
+        KeyCode::Char('2') => {
+            app.current_view = View::Categories;
+            return Ok(());
+        }
+        KeyCode::Char('3') => {
+            app.current_view = View::Settings;
+            return Ok(());
+        }
+        KeyCode::Char('q') | KeyCode::Esc => {
+            app.quit();
+            return Ok(());
+        }
+        KeyCode::Char('?') => {
+            app.mode = Mode::Help;
+            return Ok(());
+        }
         _ => {}
     }
 
@@ -161,6 +178,16 @@ async fn handle_todos_view(app: &mut App, key: KeyEvent) -> Result<()> {
             app.status_message = Some(format!("Sort order: {}", order));
         }
 
+        // Undo
+        KeyCode::Char('u') => {
+            app.undo().await?;
+        }
+
+        // Redo (Ctrl+r)
+        KeyCode::Char('r') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            app.redo().await?;
+        }
+
         _ => {}
     }
     Ok(())
@@ -237,13 +264,22 @@ async fn handle_adding_mode(app: &mut App, key: KeyEvent) -> Result<()> {
             app.pending_priority = None;
         }
         // Priority shortcuts: Ctrl+1/2/3 or Alt+1/2/3
-        KeyCode::Char('1') if key.modifiers.contains(KeyModifiers::CONTROL) || key.modifiers.contains(KeyModifiers::ALT) => {
+        KeyCode::Char('1')
+            if key.modifiers.contains(KeyModifiers::CONTROL)
+                || key.modifiers.contains(KeyModifiers::ALT) =>
+        {
             app.pending_priority = Some(Priority::Low);
         }
-        KeyCode::Char('2') if key.modifiers.contains(KeyModifiers::CONTROL) || key.modifiers.contains(KeyModifiers::ALT) => {
+        KeyCode::Char('2')
+            if key.modifiers.contains(KeyModifiers::CONTROL)
+                || key.modifiers.contains(KeyModifiers::ALT) =>
+        {
             app.pending_priority = Some(Priority::Medium);
         }
-        KeyCode::Char('3') if key.modifiers.contains(KeyModifiers::CONTROL) || key.modifiers.contains(KeyModifiers::ALT) => {
+        KeyCode::Char('3')
+            if key.modifiers.contains(KeyModifiers::CONTROL)
+                || key.modifiers.contains(KeyModifiers::ALT) =>
+        {
             app.pending_priority = Some(Priority::High);
         }
         // Tab cycles priority
@@ -321,7 +357,11 @@ fn handle_help_mode(app: &mut App, _key: KeyEvent) {
 
 fn handle_viewing_detail_mode(app: &mut App, key: KeyEvent) {
     match key.code {
-        KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('v') | KeyCode::Char(' ') | KeyCode::Enter => {
+        KeyCode::Esc
+        | KeyCode::Char('q')
+        | KeyCode::Char('v')
+        | KeyCode::Char(' ')
+        | KeyCode::Enter => {
             app.mode = Mode::Normal;
         }
         _ => {}
@@ -363,7 +403,11 @@ async fn handle_editing_full_mode(app: &mut App, key: KeyEvent) -> Result<()> {
             let category_name = state.category_name.clone();
             if let Some(todo) = app.todos.iter_mut().find(|t| t.id == todo_id) {
                 todo.title = state.title.clone();
-                todo.description = if state.description.is_empty() { None } else { Some(state.description.clone()) };
+                todo.description = if state.description.is_empty() {
+                    None
+                } else {
+                    Some(state.description.clone())
+                };
                 todo.priority = state.priority;
                 todo.due_date = state.due_date.as_ref().and_then(|s| {
                     chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d")
@@ -373,7 +417,10 @@ async fn handle_editing_full_mode(app: &mut App, key: KeyEvent) -> Result<()> {
                 });
                 // Set category_id from name
                 todo.category_id = category_name.as_ref().and_then(|name| {
-                    app.categories.iter().find(|c| &c.name == name).map(|c| c.id)
+                    app.categories
+                        .iter()
+                        .find(|c| &c.name == name)
+                        .map(|c| c.id)
                 });
                 todo.updated_at = chrono::Utc::now();
                 todo.sync_status = todoee_core::SyncStatus::Pending;
@@ -423,8 +470,12 @@ async fn handle_editing_full_mode(app: &mut App, key: KeyEvent) -> Result<()> {
         }
         KeyCode::Backspace => {
             match state.active_field {
-                EditField::Title => { state.title.pop(); }
-                EditField::Description => { state.description.pop(); }
+                EditField::Title => {
+                    state.title.pop();
+                }
+                EditField::Description => {
+                    state.description.pop();
+                }
                 EditField::Priority => {} // Can't backspace priority
                 EditField::DueDate => {
                     if let Some(ref mut due) = state.due_date {
@@ -550,8 +601,12 @@ async fn handle_adding_full_mode(app: &mut App, key: KeyEvent) -> Result<()> {
         }
         KeyCode::Backspace => {
             match state.active_field {
-                AddField::Title => { state.title.pop(); }
-                AddField::Description => { state.description.pop(); }
+                AddField::Title => {
+                    state.title.pop();
+                }
+                AddField::Description => {
+                    state.description.pop();
+                }
                 AddField::Priority => {} // Can't backspace priority
                 AddField::DueDate => {
                     if let Some(ref mut due) = state.due_date {
