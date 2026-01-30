@@ -1,6 +1,5 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use tracing::info;
 
 mod commands;
 mod tui;
@@ -12,6 +11,10 @@ mod tui;
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
+
+    /// Run in interactive TUI mode (default when no command given)
+    #[arg(short, long, global = true)]
+    interactive: bool,
 }
 
 #[derive(Subcommand)]
@@ -93,57 +96,85 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize tracing subscriber
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::from_default_env()
-                .add_directive(tracing::Level::INFO.into()),
-        )
-        .init();
-
-    info!("todoee starting");
-
     let cli = Cli::parse();
 
-    match cli.command {
-        Some(Commands::Add {
+    // If no command provided or -i flag, run interactive mode
+    if cli.command.is_none() || cli.interactive {
+        return run_interactive().await;
+    }
+
+    // Handle subcommands
+    match cli.command.unwrap() {
+        Commands::Add {
             description,
             no_ai,
             category,
             priority,
-        }) => {
+        } => {
             commands::add(description, no_ai, category, priority).await?;
         }
-        Some(Commands::List {
+        Commands::List {
             today,
             category,
             all,
-        }) => {
+        } => {
             commands::list(today, category, all).await?;
         }
-        Some(Commands::Done { id }) => {
+        Commands::Done { id } => {
             commands::done(id).await?;
         }
-        Some(Commands::Delete { id }) => {
+        Commands::Delete { id } => {
             commands::delete(id).await?;
         }
-        Some(Commands::Edit {
+        Commands::Edit {
             id,
             title,
             category,
             priority,
-        }) => {
+        } => {
             commands::edit(id, title, category, priority).await?;
         }
-        Some(Commands::Sync) => {
+        Commands::Sync => {
             commands::sync().await?;
         }
-        Some(Commands::Config { init }) => {
+        Commands::Config { init } => {
             commands::config(init).await?;
         }
-        None => {
-            // Default to list --today when no command provided
-            commands::list(true, None, false).await?;
+    }
+
+    Ok(())
+}
+
+/// Run the interactive TUI
+async fn run_interactive() -> Result<()> {
+    // Initialize application state
+    let mut app = tui::App::new().await?;
+
+    // Initialize terminal
+    let mut terminal = tui::Tui::new()?;
+
+    // Create event handler
+    let events = tui::EventHandler::new(250);
+
+    // Main loop
+    while app.running {
+        // Render UI
+        terminal.draw(|frame| tui::ui::render(&app, frame))?;
+
+        // Handle events
+        match events.next()? {
+            tui::Event::Tick => {
+                // Could refresh data periodically here
+            }
+            tui::Event::Key(key) => {
+                tui::handle_key_event(&mut app, key).await?;
+            }
+            tui::Event::Mouse(_) => {
+                // Mouse support could be added here
+            }
+            tui::Event::Resize(_, _) => {
+                // Terminal handles resize automatically
+            }
         }
     }
 
