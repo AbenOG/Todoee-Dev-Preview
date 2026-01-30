@@ -113,6 +113,16 @@ async fn handle_todos_view(app: &mut App, key: KeyEvent) -> Result<()> {
             app.filter.today_only = false;
             app.refresh_todos().await?;
         }
+        KeyCode::Char('p') => {
+            // Cycle priority filter: None -> High -> Medium -> Low -> None
+            app.filter.priority = match app.filter.priority {
+                None => Some(Priority::High),
+                Some(Priority::High) => Some(Priority::Medium),
+                Some(Priority::Medium) => Some(Priority::Low),
+                Some(Priority::Low) => None,
+            };
+            app.refresh_todos().await?;
+        }
 
         _ => {}
     }

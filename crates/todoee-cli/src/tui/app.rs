@@ -82,6 +82,7 @@ pub struct Filter {
     pub category: Option<String>,
     pub show_completed: bool,
     pub search_query: String,
+    pub priority: Option<Priority>,
 }
 
 /// Application state
@@ -164,6 +165,11 @@ impl App {
         if !self.filter.search_query.is_empty() {
             let query = self.filter.search_query.to_lowercase();
             self.todos.retain(|t| t.title.to_lowercase().contains(&query));
+        }
+
+        // Apply priority filter
+        if let Some(priority) = self.filter.priority {
+            self.todos.retain(|t| t.priority == priority);
         }
 
         // Ensure selected index is valid

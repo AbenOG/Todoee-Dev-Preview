@@ -69,7 +69,7 @@ fn render_tabs(app: &App, frame: &mut Frame, area: Rect) {
         ("3: Settings", View::Settings),
     ];
 
-    let spans: Vec<Span> = tabs
+    let mut spans: Vec<Span> = tabs
         .iter()
         .flat_map(|(label, view)| {
             let style = if app.current_view == *view {
@@ -80,6 +80,18 @@ fn render_tabs(app: &App, frame: &mut Frame, area: Rect) {
             vec![Span::styled(format!(" {} ", label), style), Span::raw("  ")]
         })
         .collect();
+
+    // Add filter indicators for Todos view
+    if app.current_view == View::Todos {
+        if let Some(priority) = app.filter.priority {
+            let (text, color) = match priority {
+                Priority::High => ("HIGH", Color::Red),
+                Priority::Medium => ("MEDIUM", Color::Yellow),
+                Priority::Low => ("LOW", Color::Green),
+            };
+            spans.push(Span::styled(format!(" [{}] ", text), Style::default().fg(color)));
+        }
+    }
 
     let tabs_line = Paragraph::new(Line::from(spans))
         .block(
@@ -288,7 +300,7 @@ fn render_help(app: &App, frame: &mut Frame, area: Rect) {
         Mode::ViewingDetail => "Esc/q/v/Enter: close detail view",
         Mode::AddingCategory => "Enter:create  Esc:cancel",
         Mode::Normal => match app.current_view {
-            View::Todos => "j/k:nav  a:add  d:done  x:del  e:edit  v:view  /:search  1/2/3:tabs  q:quit",
+            View::Todos => "j/k:nav  a:add  d:done  x:del  e:edit  v:view  p:priority  /:search  1/2/3:tabs  q:quit",
             View::Categories => "j/k:nav  a:add  x:delete  1/2/3:tabs  q:quit",
             View::Settings => "j/k:nav sections  r:reload config  1/2/3:tabs  q:quit",
         },
