@@ -45,6 +45,7 @@ pub async fn run(id: String) -> Result<()> {
             db.update_todo(&todo).await?;
 
             // Record operation for undo support
+            let new_state = serde_json::to_value(&todo)?;
             let op = Operation::new(
                 if todo.is_completed {
                     OperationType::Complete
@@ -54,7 +55,7 @@ pub async fn run(id: String) -> Result<()> {
                 EntityType::Todo,
                 todo.id,
                 Some(prev_state),
-                None,
+                Some(new_state),
             );
             db.record_operation(&op).await?;
 

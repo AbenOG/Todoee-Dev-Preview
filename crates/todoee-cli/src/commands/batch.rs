@@ -50,12 +50,13 @@ pub async fn run(cmd: BatchCommand) -> Result<()> {
                     updated.mark_complete();
                     db.update_todo(&updated).await?;
 
+                    let new_state = serde_json::to_value(&updated)?;
                     let op = Operation::new(
                         OperationType::Complete,
                         EntityType::Todo,
                         todo.id,
                         Some(prev),
-                        None,
+                        Some(new_state),
                     );
                     db.record_operation(&op).await?;
                     count += 1;
