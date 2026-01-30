@@ -1,7 +1,7 @@
 use anyhow::Result;
 use chrono::TimeZone;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use todoee_core::Priority;
+use todoee_core::{EntityType, Operation, OperationType, Priority};
 use tui_input::backend::crossterm::EventHandler as InputHandler;
 
 use super::app::{
@@ -478,32 +478,59 @@ async fn handle_editing_full_mode(app: &mut App, key: KeyEvent) -> Result<()> {
             // Save changes
             let todo_id = state.todo_id;
             let category_name = state.category_name.clone();
-            if let Some(todo) = app.todos.iter_mut().find(|t| t.id == todo_id) {
-                todo.title = state.title.clone();
-                todo.description = if state.description.is_empty() {
-                    None
-                } else {
-                    Some(state.description.clone())
-                };
-                todo.priority = state.priority;
-                todo.due_date = state.due_date.as_ref().and_then(|s| {
-                    chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d")
-                        .ok()
-                        .and_then(|d| d.and_hms_opt(12, 0, 0))
-                        .map(|dt| chrono::Utc.from_utc_datetime(&dt))
-                });
-                // Set category_id from name
-                todo.category_id = category_name.as_ref().and_then(|name| {
-                    app.categories
-                        .iter()
-                        .find(|c| &c.name == name)
-                        .map(|c| c.id)
-                });
-                todo.updated_at = chrono::Utc::now();
-                todo.sync_status = todoee_core::SyncStatus::Pending;
-                app.db.update_todo(todo).await?;
-                app.status_message = Some(format!("✓ Updated: {}", todo.title));
-            }
+
+            // Find todo with defensive handling
+            let Some(todo) = app.todos.iter_mut().find(|t| t.id == todo_id) else {
+                app.edit_state = None;
+                app.mode = Mode::Normal;
+                app.status_message = Some("Todo no longer exists".to_string());
+                return Ok(());
+            };
+
+            // Capture previous state
+            let previous_state = serde_json::to_value(&*todo).ok();
+
+            // Apply all field updates
+            todo.title = state.title.clone();
+            todo.description = if state.description.is_empty() {
+                None
+            } else {
+                Some(state.description.clone())
+            };
+            todo.priority = state.priority;
+            todo.due_date = state.due_date.as_ref().and_then(|s| {
+                chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d")
+                    .ok()
+                    .and_then(|d| d.and_hms_opt(12, 0, 0))
+                    .map(|dt| chrono::Utc.from_utc_datetime(&dt))
+            });
+            // Set category_id from name
+            todo.category_id = category_name.as_ref().and_then(|name| {
+                app.categories
+                    .iter()
+                    .find(|c| &c.name == name)
+                    .map(|c| c.id)
+            });
+            todo.updated_at = chrono::Utc::now();
+            todo.sync_status = todoee_core::SyncStatus::Pending;
+
+            // Capture new state
+            let new_state = serde_json::to_value(&*todo).ok();
+            let title = todo.title.clone();
+
+            app.db.update_todo(todo).await?;
+
+            // Record operation for undo/redo support
+            let op = Operation::new(
+                OperationType::Update,
+                EntityType::Todo,
+                todo_id,
+                previous_state,
+                new_state,
+            );
+            app.db.record_operation(&op).await?;
+
+            app.status_message = Some(format!("✓ Updated: {}", title));
             app.edit_state = None;
             app.mode = Mode::Normal;
             app.refresh_todos().await?;
