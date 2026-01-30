@@ -17,6 +17,12 @@ pub async fn run(
         anyhow::bail!("At least one of --title, --category, or --priority must be provided");
     }
 
+    if let Some(ref t) = title {
+        if t.trim().is_empty() {
+            anyhow::bail!("Title cannot be empty");
+        }
+    }
+
     // Load config and open local database
     let config = Config::load().context("Failed to load configuration")?;
     let db_path = config.local_db_path()?;
