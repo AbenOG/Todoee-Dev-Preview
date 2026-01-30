@@ -461,7 +461,9 @@ impl App {
         }
 
         // Ensure selected index is valid
-        if self.selected >= self.todos.len() && !self.todos.is_empty() {
+        if self.todos.is_empty() {
+            self.selected = 0;
+        } else if self.selected >= self.todos.len() {
             self.selected = self.todos.len() - 1;
         }
 
@@ -740,7 +742,9 @@ impl App {
 
             self.status_message = Some(format!("Deleted category: {}", name));
             self.refresh_categories().await?;
-            if self.category_selected >= self.categories.len() && !self.categories.is_empty() {
+            if self.categories.is_empty() {
+                self.category_selected = 0;
+            } else if self.category_selected >= self.categories.len() {
                 self.category_selected = self.categories.len() - 1;
             }
         }
