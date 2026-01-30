@@ -4,7 +4,8 @@ use tui_input::backend::crossterm::EventHandler as InputHandler;
 use chrono::TimeZone;
 use todoee_core::Priority;
 
-use super::app::{App, EditField, EditState, Mode, View};
+use super::app::{App, EditField, EditState, Mode, SettingsSection, View};
+use todoee_core::Config;
 
 /// Handle key events and update app state
 pub async fn handle_key_event(app: &mut App, key: KeyEvent) -> Result<()> {
@@ -142,8 +143,35 @@ async fn handle_categories_view(app: &mut App, key: KeyEvent) -> Result<()> {
     Ok(())
 }
 
-fn handle_settings_view(_app: &mut App, _key: KeyEvent) -> Result<()> {
-    // Settings navigation - to be implemented in later tasks
+fn handle_settings_view(app: &mut App, key: KeyEvent) -> Result<()> {
+    match key.code {
+        KeyCode::Char('j') | KeyCode::Down => {
+            app.settings_section = match app.settings_section {
+                SettingsSection::Ai => SettingsSection::Display,
+                SettingsSection::Display => SettingsSection::Notifications,
+                SettingsSection::Notifications => SettingsSection::Database,
+                SettingsSection::Database => SettingsSection::Database,
+            };
+        }
+        KeyCode::Char('k') | KeyCode::Up => {
+            app.settings_section = match app.settings_section {
+                SettingsSection::Ai => SettingsSection::Ai,
+                SettingsSection::Display => SettingsSection::Ai,
+                SettingsSection::Notifications => SettingsSection::Display,
+                SettingsSection::Database => SettingsSection::Notifications,
+            };
+        }
+        KeyCode::Char('r') => {
+            // Reload config
+            if let Ok(config) = Config::load() {
+                app.config = config;
+                app.status_message = Some("✓ Configuration reloaded".to_string());
+            } else {
+                app.status_message = Some("✗ Failed to reload configuration".to_string());
+            }
+        }
+        _ => {}
+    }
     Ok(())
 }
 

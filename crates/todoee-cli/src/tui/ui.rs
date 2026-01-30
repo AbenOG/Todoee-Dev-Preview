@@ -9,7 +9,7 @@ use chrono::Utc;
 use todoee_core::Priority;
 
 use super::app::{App, Mode, View};
-use super::widgets::{CategoryListWidget, TodoDetailWidget, TodoEditorWidget};
+use super::widgets::{CategoryListWidget, SettingsWidget, TodoDetailWidget, TodoEditorWidget};
 
 /// Main UI rendering function
 pub fn render(app: &App, frame: &mut Frame) {
@@ -124,11 +124,8 @@ fn render_settings_header(_app: &App, frame: &mut Frame, area: Rect) {
     frame.render_widget(header, area);
 }
 
-fn render_settings_content(_app: &App, frame: &mut Frame, area: Rect) {
-    let placeholder = Paragraph::new("Settings panel - use j/k to navigate sections")
-        .style(Style::default().fg(Color::DarkGray))
-        .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(Color::DarkGray)));
-    frame.render_widget(placeholder, area);
+fn render_settings_content(app: &App, frame: &mut Frame, area: Rect) {
+    SettingsWidget::new(&app.config, app.settings_section).render(frame, area);
 }
 
 fn render_input(app: &App, frame: &mut Frame, area: Rect) {
@@ -293,7 +290,7 @@ fn render_help(app: &App, frame: &mut Frame, area: Rect) {
         Mode::Normal => match app.current_view {
             View::Todos => "j/k:nav  a:add  d:done  x:del  e:edit  v:view  /:search  1/2/3:tabs  q:quit",
             View::Categories => "j/k:nav  a:add  x:delete  1/2/3:tabs  q:quit",
-            View::Settings => "j/k:nav  1/2/3:tabs  q:quit",
+            View::Settings => "j/k:nav sections  r:reload config  1/2/3:tabs  q:quit",
         },
     };
 
