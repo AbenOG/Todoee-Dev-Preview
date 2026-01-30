@@ -9,14 +9,49 @@ pub enum Mode {
     Normal,
     /// Adding a new task
     Adding,
-    /// Editing a task
+    /// Editing a task (title-only quick edit)
     Editing,
+    /// Full multi-field edit
+    EditingFull,
     /// Searching/filtering
     Searching,
     /// Showing help
     Help,
     /// Viewing todo details
     ViewingDetail,
+}
+
+/// Field being edited in full edit mode
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EditField {
+    Title,
+    Description,
+    Priority,
+    DueDate,
+}
+
+/// State for editing a todo with multiple fields
+#[derive(Debug, Clone)]
+pub struct EditState {
+    pub todo_id: uuid::Uuid,
+    pub title: String,
+    pub description: String,
+    pub priority: Priority,
+    pub due_date: Option<String>,  // Store as string for editing
+    pub active_field: EditField,
+}
+
+impl EditState {
+    pub fn from_todo(todo: &Todo) -> Self {
+        Self {
+            todo_id: todo.id,
+            title: todo.title.clone(),
+            description: todo.description.clone().unwrap_or_default(),
+            priority: todo.priority,
+            due_date: todo.due_date.map(|d| d.format("%Y-%m-%d").to_string()),
+            active_field: EditField::Title,
+        }
+    }
 }
 
 /// Filter state for the task list
@@ -50,6 +85,8 @@ pub struct App {
     pub db: LocalDb,
     /// Configuration
     pub config: Config,
+    /// Edit state for full todo editing
+    pub edit_state: Option<EditState>,
 }
 
 impl App {
@@ -70,6 +107,7 @@ impl App {
             status_message: None,
             db,
             config,
+            edit_state: None,
         };
 
         app.refresh_todos().await?;

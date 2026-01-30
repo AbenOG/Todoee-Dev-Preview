@@ -223,6 +223,7 @@ fn render_status(app: &App, frame: &mut Frame, area: Rect) {
 fn render_help(app: &App, frame: &mut Frame, area: Rect) {
     let help_text = match app.mode {
         Mode::Adding | Mode::Editing => "Enter:submit  Esc:cancel",
+        Mode::EditingFull => "Tab:next  Shift+Tab:prev  Enter:save  Esc:cancel",
         Mode::Searching => "Enter:apply  Esc:cancel  Ctrl+U:clear",
         Mode::Help => "Press any key to close",
         Mode::ViewingDetail => "Esc/q/v/Enter: close detail view",

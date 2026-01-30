@@ -13,6 +13,7 @@ pub async fn handle_key_event(app: &mut App, key: KeyEvent) -> Result<()> {
         Mode::Normal => handle_normal_mode(app, key).await?,
         Mode::Adding => handle_adding_mode(app, key).await?,
         Mode::Editing => handle_editing_mode(app, key).await?,
+        Mode::EditingFull => handle_editing_full_mode(app, key).await?,
         Mode::Searching => handle_searching_mode(app, key).await?,
         Mode::Help => handle_help_mode(app, key),
         Mode::ViewingDetail => handle_viewing_detail_mode(app, key),
@@ -187,4 +188,17 @@ fn handle_viewing_detail_mode(app: &mut App, key: KeyEvent) {
         }
         _ => {}
     }
+}
+
+#[allow(unused_variables)]
+async fn handle_editing_full_mode(app: &mut App, key: KeyEvent) -> Result<()> {
+    // Placeholder for full edit mode handling - will be implemented in Task 4
+    match key.code {
+        KeyCode::Esc => {
+            app.mode = Mode::Normal;
+            app.edit_state = None;
+        }
+        _ => {}
+    }
+    Ok(())
 }
