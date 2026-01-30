@@ -6,4 +6,4 @@ pub mod auth;
 pub mod sync;
 
 pub use models::*;
-pub use config::Config;
+pub use config::{Config, AiConfig, DatabaseConfig, NotificationConfig, DisplayConfig};
