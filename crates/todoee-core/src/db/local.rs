@@ -275,14 +275,19 @@ impl LocalDb {
         row.map(|r| r.try_into()).transpose()
     }
 
-    /// List all todos that are not completed.
-    pub async fn list_todos(&self) -> Result<Vec<Todo>> {
-        let rows: Vec<TodoRow> = sqlx::query_as(
-            "SELECT * FROM todos WHERE is_completed = 0 ORDER BY created_at DESC",
-        )
-        .fetch_all(&self.pool)
-        .await
-        .context("Failed to list todos")?;
+    /// List todos, optionally excluding completed ones.
+    /// If `exclude_completed` is true, only non-completed todos are returned.
+    pub async fn list_todos(&self, exclude_completed: bool) -> Result<Vec<Todo>> {
+        let query = if exclude_completed {
+            "SELECT * FROM todos WHERE is_completed = 0 ORDER BY created_at DESC"
+        } else {
+            "SELECT * FROM todos ORDER BY created_at DESC"
+        };
+
+        let rows: Vec<TodoRow> = sqlx::query_as(query)
+            .fetch_all(&self.pool)
+            .await
+            .context("Failed to list todos")?;
 
         rows.into_iter().map(|r| r.try_into()).collect()
     }
@@ -503,9 +508,13 @@ mod tests {
         db.create_todo(&todo2).await.unwrap();
         db.create_todo(&todo3).await.unwrap();
 
-        // list_todos returns only non-completed
-        let todos = db.list_todos().await.unwrap();
+        // list_todos(true) returns only non-completed
+        let todos = db.list_todos(true).await.unwrap();
         assert_eq!(todos.len(), 2);
+
+        // list_todos(false) returns all todos
+        let all_todos = db.list_todos(false).await.unwrap();
+        assert_eq!(all_todos.len(), 3);
 
         // Verify none of them are completed
         for todo in &todos {
