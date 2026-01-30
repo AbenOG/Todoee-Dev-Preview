@@ -47,7 +47,7 @@ pub struct App {
     /// Database connection
     pub db: LocalDb,
     /// Configuration
-    config: Config,
+    pub config: Config,
 }
 
 impl App {
@@ -197,5 +197,66 @@ impl App {
     /// Quit the application
     pub fn quit(&mut self) {
         self.running = false;
+    }
+
+    /// Add a new todo with optional AI parsing
+    pub async fn add_todo_with_ai(&mut self, use_ai: bool) -> Result<()> {
+        let description = self.input.value().trim().to_string();
+        if description.is_empty() {
+            self.status_message = Some("Cannot add empty task".to_string());
+            return Ok(());
+        }
+
+        let todo = if use_ai && self.config.ai.model.is_some() {
+            match self.parse_with_ai(&description).await {
+                Ok(t) => t,
+                Err(e) => {
+                    self.status_message = Some(format!("AI failed: {}, using plain text", e));
+                    Todo::new(description.clone(), None)
+                }
+            }
+        } else {
+            Todo::new(description.clone(), None)
+        };
+
+        let title = todo.title.clone();
+        self.db.create_todo(&todo).await?;
+        self.status_message = Some(format!("✓ Added: {}", title));
+        self.input.reset();
+        self.refresh_todos().await?;
+
+        Ok(())
+    }
+
+    async fn parse_with_ai(&self, description: &str) -> Result<Todo> {
+        use todoee_core::AiClient;
+
+        let client = AiClient::new(&self.config)?;
+        let parsed = client.parse_task(description).await?;
+
+        let mut todo = Todo::new(parsed.title, None);
+        todo.description = parsed.description;
+        todo.due_date = parsed.due_date;
+        todo.reminder_at = parsed.reminder_at;
+
+        if let Some(p) = parsed.priority {
+            todo.priority = match p {
+                1 => Priority::Low,
+                3 => Priority::High,
+                _ => Priority::Medium,
+            };
+        }
+
+        todo.ai_metadata = Some(serde_json::json!({
+            "original_input": description,
+            "parsed_category": parsed.category,
+        }));
+
+        Ok(todo)
+    }
+
+    /// Check if AI is configured
+    pub fn has_ai(&self) -> bool {
+        self.config.ai.model.is_some()
     }
 }
