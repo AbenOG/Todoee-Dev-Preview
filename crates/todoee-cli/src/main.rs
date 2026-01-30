@@ -3,6 +3,7 @@ use clap::{Parser, Subcommand};
 use tracing::info;
 
 mod commands;
+mod tui;
 
 /// todoee - AI-powered todo manager
 #[derive(Parser)]
