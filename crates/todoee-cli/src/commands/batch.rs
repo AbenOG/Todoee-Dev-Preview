@@ -33,6 +33,9 @@ pub async fn run(cmd: BatchCommand) -> Result<()> {
 
     match cmd {
         BatchCommand::Done { ids } => {
+            if ids.is_empty() {
+                anyhow::bail!("No IDs provided. Usage: todoee batch done <id1> <id2> ...");
+            }
             // For done, we only need incomplete todos (exclude_completed = true)
             let todos = db.list_todos(true).await?;
             let mut count = 0;
@@ -64,6 +67,9 @@ pub async fn run(cmd: BatchCommand) -> Result<()> {
             println!("\nMarked {} todo(s) as done", count);
         }
         BatchCommand::Delete { ids } => {
+            if ids.is_empty() {
+                anyhow::bail!("No IDs provided. Usage: todoee batch delete <id1> <id2> ...");
+            }
             // Include all todos for delete (exclude_completed = false)
             let todos = db.list_todos(false).await?;
             let mut count = 0;
@@ -91,13 +97,15 @@ pub async fn run(cmd: BatchCommand) -> Result<()> {
             println!("\nDeleted {} todo(s)", count);
         }
         BatchCommand::Priority { level, ids } => {
+            if ids.is_empty() {
+                anyhow::bail!("No IDs provided. Usage: todoee batch priority <level> <id1> <id2> ...");
+            }
             let priority = match level {
                 1 => Priority::Low,
                 2 => Priority::Medium,
                 3 => Priority::High,
                 _ => {
-                    println!("Priority must be 1, 2, or 3");
-                    return Ok(());
+                    anyhow::bail!("Priority must be 1, 2, or 3");
                 }
             };
 
