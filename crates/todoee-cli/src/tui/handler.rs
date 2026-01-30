@@ -257,11 +257,15 @@ async fn handle_todos_view(app: &mut App, key: KeyEvent) -> Result<()> {
         KeyCode::Char('f') => {
             if app.selected_todo().is_some() {
                 app.start_focus(25); // 25 minute pomodoro
+            } else {
+                app.status_message = Some("No task selected".to_string());
             }
         }
         KeyCode::Char('F') => {
             if app.selected_todo().is_some() {
                 app.start_focus(5); // 5 minute quick focus
+            } else {
+                app.status_message = Some("No task selected".to_string());
             }
         }
 
