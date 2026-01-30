@@ -65,6 +65,12 @@ async fn handle_todos_view(app: &mut App, key: KeyEvent) -> Result<()> {
             app.add_state = Some(AddState::new());
             app.mode = Mode::AddingFull;
         }
+        KeyCode::Char('A') => {
+            // Quick add with AI parsing
+            app.mode = Mode::Adding;
+            app.input.reset();
+            app.pending_priority = None;
+        }
         KeyCode::Char('d') | KeyCode::Enter => {
             app.mark_selected_done().await?;
         }
