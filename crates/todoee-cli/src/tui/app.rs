@@ -949,19 +949,48 @@ impl App {
 
     /// Stash the selected todo
     pub async fn stash_selected(&mut self) -> Result<()> {
-        if let Some(todo) = self.selected_todo().cloned() {
-            let title = todo.title.clone();
-            self.db.stash_todo(todo.id, None).await?;
-            self.status_message = Some(format!("Stashed: {}", title));
-            self.refresh_todos().await?;
-        }
+        let Some(todo) = self.selected_todo().cloned() else {
+            self.status_message = Some("No task selected".to_string());
+            return Ok(());
+        };
+
+        let title = todo.title.clone();
+        let todo_id = todo.id;
+        let previous_state = serde_json::to_value(&todo).ok();
+
+        self.db.stash_todo(todo_id, None).await?;
+
+        // Record operation for undo/redo
+        let op = Operation::new(
+            OperationType::Stash,
+            EntityType::Todo,
+            todo_id,
+            previous_state,
+            None,
+        );
+        self.db.record_operation(&op).await?;
+
+        self.status_message = Some(format!("✓ Stashed: {}", title));
+        self.refresh_todos().await?;
         Ok(())
     }
 
     /// Pop the most recent stashed todo
     pub async fn stash_pop(&mut self) -> Result<()> {
         if let Some(todo) = self.db.stash_pop().await? {
-            self.status_message = Some(format!("Restored: {}", todo.title));
+            let new_state = serde_json::to_value(&todo).ok();
+
+            // Record operation for undo/redo
+            let op = Operation::new(
+                OperationType::Unstash,
+                EntityType::Todo,
+                todo.id,
+                None,
+                new_state,
+            );
+            self.db.record_operation(&op).await?;
+
+            self.status_message = Some(format!("✓ Restored: {}", todo.title));
             self.refresh_todos().await?;
         } else {
             self.status_message = Some("Stash is empty".to_string());
