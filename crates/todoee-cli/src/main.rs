@@ -147,6 +147,12 @@ enum Commands {
 
     /// Show all overdue todos
     Overdue,
+
+    /// Search todos (fuzzy matching)
+    Search {
+        /// Search query
+        query: String,
+    },
 }
 
 #[tokio::main]
@@ -218,6 +224,9 @@ async fn main() -> Result<()> {
         }
         Commands::Overdue => {
             commands::upcoming::overdue().await?;
+        }
+        Commands::Search { query } => {
+            commands::search::run(&query).await?;
         }
     }
 
