@@ -4,7 +4,7 @@ use tui_input::backend::crossterm::EventHandler as InputHandler;
 use chrono::TimeZone;
 use todoee_core::Priority;
 
-use super::app::{App, EditField, EditState, Mode, SettingsSection, SortBy, SortOrder, View};
+use super::app::{AddField, AddState, App, EditField, EditState, Mode, SettingsSection, SortBy, SortOrder, View};
 use todoee_core::Config;
 
 /// Handle key events and update app state
@@ -62,8 +62,8 @@ async fn handle_todos_view(app: &mut App, key: KeyEvent) -> Result<()> {
 
         // Actions
         KeyCode::Char('a') => {
-            app.mode = Mode::Adding;
-            app.input.reset();
+            app.add_state = Some(AddState::new());
+            app.mode = Mode::AddingFull;
         }
         KeyCode::Char('d') | KeyCode::Enter => {
             app.mark_selected_done().await?;
@@ -459,12 +459,117 @@ async fn handle_adding_category_mode(app: &mut App, key: KeyEvent) -> Result<()>
     Ok(())
 }
 
-/// Handle input in AddingFull mode (placeholder - to be implemented in Task 4)
 async fn handle_adding_full_mode(app: &mut App, key: KeyEvent) -> Result<()> {
-    // Placeholder: just allow Escape to cancel
-    if key.code == KeyCode::Esc {
+    let Some(ref mut state) = app.add_state else {
         app.mode = Mode::Normal;
-        app.add_state = None;
+        return Ok(());
+    };
+
+    match key.code {
+        KeyCode::Esc => {
+            app.add_state = None;
+            app.mode = Mode::Normal;
+        }
+        KeyCode::Tab => {
+            state.active_field = match state.active_field {
+                AddField::Title => AddField::Description,
+                AddField::Description => AddField::Priority,
+                AddField::Priority => AddField::DueDate,
+                AddField::DueDate => AddField::Reminder,
+                AddField::Reminder => AddField::Category,
+                AddField::Category => AddField::Title,
+            };
+        }
+        KeyCode::BackTab => {
+            state.active_field = match state.active_field {
+                AddField::Title => AddField::Category,
+                AddField::Description => AddField::Title,
+                AddField::Priority => AddField::Description,
+                AddField::DueDate => AddField::Priority,
+                AddField::Reminder => AddField::DueDate,
+                AddField::Category => AddField::Reminder,
+            };
+        }
+        KeyCode::Enter => {
+            if state.is_valid() {
+                app.create_todo_from_add_state().await?;
+                app.add_state = None;
+                app.mode = Mode::Normal;
+            } else {
+                app.status_message = Some("Title is required".to_string());
+            }
+        }
+        KeyCode::Char(c) => {
+            match state.active_field {
+                AddField::Title => state.title.push(c),
+                AddField::Description => state.description.push(c),
+                AddField::Priority => {
+                    state.priority = match c {
+                        '1' => Priority::Low,
+                        '2' => Priority::Medium,
+                        '3' => Priority::High,
+                        _ => state.priority,
+                    };
+                }
+                AddField::DueDate => {
+                    let due = state.due_date.get_or_insert_with(String::new);
+                    if c.is_ascii_alphanumeric() || c == '-' || c == '+' {
+                        due.push(c);
+                    }
+                }
+                AddField::Reminder => {
+                    let rem = state.reminder.get_or_insert_with(String::new);
+                    if c.is_ascii_digit() || c == '-' || c == ':' || c == ' ' {
+                        rem.push(c);
+                    }
+                }
+                AddField::Category => {
+                    // Cycle through categories with any key
+                    let cat_names: Vec<_> = app.categories.iter().map(|c| c.name.clone()).collect();
+                    if !cat_names.is_empty() {
+                        state.category_name = match &state.category_name {
+                            None => Some(cat_names[0].clone()),
+                            Some(current) => {
+                                let idx = cat_names.iter().position(|n| n == current).unwrap_or(0);
+                                if idx + 1 < cat_names.len() {
+                                    Some(cat_names[idx + 1].clone())
+                                } else {
+                                    None
+                                }
+                            }
+                        };
+                    }
+                }
+            }
+        }
+        KeyCode::Backspace => {
+            match state.active_field {
+                AddField::Title => { state.title.pop(); }
+                AddField::Description => { state.description.pop(); }
+                AddField::Priority => {} // Can't backspace priority
+                AddField::DueDate => {
+                    if let Some(ref mut due) = state.due_date {
+                        due.pop();
+                        if due.is_empty() {
+                            state.due_date = None;
+                        }
+                    }
+                }
+                AddField::Reminder => {
+                    if let Some(ref mut rem) = state.reminder {
+                        rem.pop();
+                        if rem.is_empty() {
+                            state.reminder = None;
+                        }
+                    }
+                }
+                AddField::Category => {
+                    state.category_name = None;
+                }
+            }
+        }
+        _ => {}
     }
+
     Ok(())
 }

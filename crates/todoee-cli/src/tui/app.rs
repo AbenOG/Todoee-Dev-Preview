@@ -488,4 +488,9 @@ impl App {
         }
         Ok(())
     }
+
+    /// Create a new todo from add state (stub - will be implemented in Task 5)
+    pub async fn create_todo_from_add_state(&mut self) -> Result<()> {
+        Ok(())
+    }
 }
