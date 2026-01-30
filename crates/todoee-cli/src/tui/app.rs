@@ -146,6 +146,8 @@ pub struct App {
     pub is_loading: bool,
     /// Loading message to display
     pub loading_message: Option<String>,
+    /// Priority to apply when adding a task
+    pub pending_priority: Option<Priority>,
 }
 
 impl App {
@@ -172,6 +174,7 @@ impl App {
             settings_section: SettingsSection::default(),
             is_loading: false,
             loading_message: None,
+            pending_priority: None,
         };
 
         app.refresh_todos().await?;
@@ -311,10 +314,19 @@ impl App {
             return Ok(());
         }
 
+        // Show loading indicator for AI parsing
+        if use_ai && self.config.ai.model.is_some() {
+            self.set_loading("Parsing with AI...");
+        }
+
         let todo = if use_ai && self.config.ai.model.is_some() {
             match self.parse_with_ai(&description).await {
-                Ok(t) => t,
+                Ok(t) => {
+                    self.clear_loading();
+                    t
+                }
                 Err(e) => {
+                    self.clear_loading();
                     self.status_message = Some(format!("AI failed: {}, using plain text", e));
                     Todo::new(description.clone(), None)
                 }
@@ -322,6 +334,12 @@ impl App {
         } else {
             Todo::new(description.clone(), None)
         };
+
+        // Apply pending priority if set
+        let mut todo = todo;
+        if let Some(priority) = self.pending_priority.take() {
+            todo.priority = priority;
+        }
 
         let title = todo.title.clone();
         self.db.create_todo(&todo).await?;
