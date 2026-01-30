@@ -180,6 +180,7 @@ fn parse_reminder(input: &str) -> Option<chrono::DateTime<Utc>> {
 #[derive(Debug, Clone, Default)]
 pub struct Filter {
     pub today_only: bool,
+    pub overdue_only: bool,
     pub category: Option<String>,
     pub show_completed: bool,
     pub search_query: String,
@@ -264,7 +265,9 @@ impl App {
 
     /// Refresh the todo list from database
     pub async fn refresh_todos(&mut self) -> Result<()> {
-        self.todos = if self.filter.today_only {
+        self.todos = if self.filter.overdue_only {
+            self.db.list_todos_overdue().await?
+        } else if self.filter.today_only {
             self.db.list_todos_due_today().await?
         } else if let Some(ref cat_name) = self.filter.category {
             if let Some(cat) = self.db.get_category_by_name(cat_name).await? {
@@ -393,6 +396,14 @@ impl App {
     /// Toggle today filter
     pub fn toggle_today_filter(&mut self) {
         self.filter.today_only = !self.filter.today_only;
+        self.filter.overdue_only = false;
+        self.filter.category = None;
+    }
+
+    /// Toggle overdue filter
+    pub fn toggle_overdue_filter(&mut self) {
+        self.filter.overdue_only = !self.filter.overdue_only;
+        self.filter.today_only = false;
         self.filter.category = None;
     }
 

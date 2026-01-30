@@ -97,18 +97,25 @@ fn render_tabs(app: &App, frame: &mut Frame, area: Rect) {
         .collect();
 
     // Add filter indicators for Todos view
-    if app.current_view == View::Todos
-        && let Some(priority) = app.filter.priority
-    {
-        let (text, color) = match priority {
-            Priority::High => ("HIGH", Color::Red),
-            Priority::Medium => ("MEDIUM", Color::Yellow),
-            Priority::Low => ("LOW", Color::Green),
-        };
-        spans.push(Span::styled(
-            format!(" [{}] ", text),
-            Style::default().fg(color),
-        ));
+    if app.current_view == View::Todos {
+        if let Some(priority) = app.filter.priority {
+            let (text, color) = match priority {
+                Priority::High => ("HIGH", Color::Red),
+                Priority::Medium => ("MEDIUM", Color::Yellow),
+                Priority::Low => ("LOW", Color::Green),
+            };
+            spans.push(Span::styled(
+                format!(" [{}] ", text),
+                Style::default().fg(color),
+            ));
+        }
+
+        if app.filter.overdue_only {
+            spans.push(Span::styled(
+                " [OVERDUE] ",
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            ));
+        }
     }
 
     let tabs_line = Paragraph::new(Line::from(spans)).block(
@@ -413,6 +420,7 @@ fn render_help_modal(frame: &mut Frame) {
         Line::from("  s           Cycle sort field"),
         Line::from("  S           Toggle sort order"),
         Line::from("  t           Toggle today filter"),
+        Line::from("  o           Toggle overdue filter"),
         Line::from("  Tab         Toggle show completed"),
         Line::from("  c           Cycle category filter"),
         Line::from("  Esc         Close modal/cancel"),

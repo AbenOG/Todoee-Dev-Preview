@@ -114,6 +114,20 @@ async fn handle_todos_view(app: &mut App, key: KeyEvent) -> Result<()> {
         KeyCode::Char('t') => {
             app.toggle_today_filter();
             app.refresh_todos().await?;
+            if app.filter.today_only {
+                app.status_message = Some("Showing today's tasks".to_string());
+            } else {
+                app.status_message = Some("Showing all tasks".to_string());
+            }
+        }
+        KeyCode::Char('o') => {
+            app.toggle_overdue_filter();
+            app.refresh_todos().await?;
+            if app.filter.overdue_only {
+                app.status_message = Some("Showing overdue tasks".to_string());
+            } else {
+                app.status_message = Some("Showing all tasks".to_string());
+            }
         }
         KeyCode::Tab => {
             app.toggle_show_completed();
