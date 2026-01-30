@@ -2,6 +2,15 @@ use anyhow::Result;
 use todoee_core::{Config, LocalDb, Todo, Category, Priority};
 use tui_input::Input;
 
+/// Main view/tab of the application
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum View {
+    #[default]
+    Todos,
+    Categories,
+    Settings,
+}
+
 /// Application mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
@@ -87,6 +96,10 @@ pub struct App {
     pub config: Config,
     /// Edit state for full todo editing
     pub edit_state: Option<EditState>,
+    /// Current view/tab
+    pub current_view: View,
+    /// Selected category index
+    pub category_selected: usize,
 }
 
 impl App {
@@ -108,6 +121,8 @@ impl App {
             db,
             config,
             edit_state: None,
+            current_view: View::default(),
+            category_selected: 0,
         };
 
         app.refresh_todos().await?;
