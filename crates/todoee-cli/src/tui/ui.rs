@@ -69,17 +69,17 @@ pub fn render(app: &App, frame: &mut Frame) {
         let area = centered_rect(65, 60, frame.area());
         TodoAddWidget::new(state).render(frame, area);
     }
-    if app.mode == Mode::Insights {
-        if let Some(ref data) = app.insights_data {
-            let area = centered_rect(50, 55, frame.area());
-            InsightsWidget::new(data).render(frame, area);
-        }
+    if app.mode == Mode::Insights
+        && let Some(ref data) = app.insights_data
+    {
+        let area = centered_rect(50, 55, frame.area());
+        InsightsWidget::new(data).render(frame, area);
     }
-    if app.mode == Mode::Focus {
-        if let Some(ref state) = app.focus_state {
-            let area = centered_rect(50, 40, frame.area());
-            FocusWidget::new(state).render(frame, area);
-        }
+    if app.mode == Mode::Focus
+        && let Some(ref state) = app.focus_state
+    {
+        let area = centered_rect(50, 40, frame.area());
+        FocusWidget::new(state).render(frame, area);
     }
 
     // Loading overlay (always on top)
@@ -382,7 +382,7 @@ fn render_help(app: &App, frame: &mut Frame, area: Rect) {
         Mode::Focus => "Space:pause  q/Esc:cancel  Enter:complete early",
         Mode::Normal => match app.current_view {
             View::Todos => {
-                "j/k:nav  a:add  d:done  x:del  e:edit  v:view  z:stash  Z:pop  u:undo  ?:help  q:quit"
+                "j/k:nav a:add d:done x:del u:undo z:stash o:overdue i:insights f:focus n:now ?:help q:quit"
             }
             View::Categories => "j/k:nav  a:add  x:delete  1/2/3:tabs  q:quit",
             View::Settings => "j/k:nav sections  r:reload config  1/2/3:tabs  q:quit",

@@ -56,11 +56,11 @@ pub async fn run(days: Option<i64>, dry_run: bool) -> Result<()> {
     // Delete old completed todos
     let mut deleted_todos = 0;
     for todo in all_todos.iter().filter(|t| t.is_completed) {
-        if let Some(completed_at) = todo.completed_at {
-            if completed_at < cutoff {
-                db.delete_todo(todo.id).await?;
-                deleted_todos += 1;
-            }
+        if let Some(completed_at) = todo.completed_at
+            && completed_at < cutoff
+        {
+            db.delete_todo(todo.id).await?;
+            deleted_todos += 1;
         }
     }
 
