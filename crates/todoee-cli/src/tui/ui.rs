@@ -311,40 +311,72 @@ fn render_help(app: &App, frame: &mut Frame, area: Rect) {
 }
 
 fn render_help_modal(frame: &mut Frame) {
-    let area = centered_rect(60, 70, frame.area());
+    let area = centered_rect(70, 85, frame.area());
 
     let help_text = vec![
-        Line::from(Span::styled("Keyboard Shortcuts", Style::default().bold().fg(Color::Cyan))),
+        Line::from(Span::styled(
+            "Keyboard Shortcuts",
+            Style::default().bold().fg(Color::Cyan),
+        )),
         Line::from(""),
-        Line::from(vec![
-            Span::styled("Navigation", Style::default().fg(Color::Yellow)),
-        ]),
+        Line::from(Span::styled("Views", Style::default().fg(Color::Yellow))),
+        Line::from("  1           Todos view"),
+        Line::from("  2           Categories view"),
+        Line::from("  3           Settings view"),
+        Line::from("  ?           Toggle help"),
+        Line::from(""),
+        Line::from(Span::styled(
+            "Todos View",
+            Style::default().fg(Color::Yellow),
+        )),
         Line::from("  j / ↓       Move down"),
         Line::from("  k / ↑       Move up"),
-        Line::from("  g           Go to top"),
-        Line::from("  G           Go to bottom"),
-        Line::from(""),
-        Line::from(vec![
-            Span::styled("Actions", Style::default().fg(Color::Yellow)),
-        ]),
-        Line::from("  a           Add new task"),
-        Line::from("  d / Enter   Mark as done"),
-        Line::from("  x           Delete task"),
-        Line::from("  e           Edit task"),
-        Line::from(""),
-        Line::from(vec![
-            Span::styled("Filtering", Style::default().fg(Color::Yellow)),
-        ]),
-        Line::from("  /           Search tasks"),
+        Line::from("  g           Jump to top"),
+        Line::from("  G           Jump to bottom"),
+        Line::from("  a           Add todo"),
+        Line::from("  e           Edit todo (full editor)"),
+        Line::from("  v / Space   View details"),
+        Line::from("  Enter       Toggle complete"),
+        Line::from("  d           Mark as done"),
+        Line::from("  x           Delete todo"),
+        Line::from("  /           Search"),
+        Line::from("  p           Cycle priority filter"),
+        Line::from("  s           Cycle sort field"),
+        Line::from("  S           Toggle sort order"),
         Line::from("  t           Toggle today filter"),
-        Line::from("  c           Cycle categories"),
-        Line::from("  Tab         Show all / incomplete"),
+        Line::from("  Tab         Toggle show completed"),
+        Line::from("  c           Cycle category filter"),
+        Line::from("  Esc         Close modal/cancel"),
+        Line::from("  q           Quit"),
         Line::from(""),
-        Line::from(vec![
-            Span::styled("Other", Style::default().fg(Color::Yellow)),
-        ]),
-        Line::from("  ?           Show this help"),
-        Line::from("  q / Esc     Quit"),
+        Line::from(Span::styled(
+            "Categories View",
+            Style::default().fg(Color::Yellow),
+        )),
+        Line::from("  j / ↓       Move down"),
+        Line::from("  k / ↑       Move up"),
+        Line::from("  a           Add category"),
+        Line::from("  x           Delete category"),
+        Line::from("  Esc         Cancel"),
+        Line::from("  q           Quit"),
+        Line::from(""),
+        Line::from(Span::styled(
+            "Settings View",
+            Style::default().fg(Color::Yellow),
+        )),
+        Line::from("  j / ↓       Next section"),
+        Line::from("  k / ↑       Previous section"),
+        Line::from("  r           Reload config"),
+        Line::from("  q           Quit"),
+        Line::from(""),
+        Line::from(Span::styled(
+            "Editor (when editing todo)",
+            Style::default().fg(Color::Yellow),
+        )),
+        Line::from("  Tab         Next field"),
+        Line::from("  Shift+Tab   Previous field"),
+        Line::from("  Enter       Save"),
+        Line::from("  Esc         Cancel"),
     ];
 
     let help = Paragraph::new(help_text)
@@ -352,7 +384,7 @@ fn render_help_modal(frame: &mut Frame) {
             Block::default()
                 .title(" Help ")
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Cyan))
+                .border_style(Style::default().fg(Color::Cyan)),
         )
         .wrap(Wrap { trim: false });
 
