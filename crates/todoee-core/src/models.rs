@@ -1,3 +1,5 @@
+use std::fmt;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -118,6 +120,86 @@ pub struct Event {
     pub recurrence_rule: Option<String>,
     pub created_at: DateTime<Utc>,
     pub sync_status: SyncStatus,
+}
+
+/// Type of operation performed on an entity.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum OperationType {
+    Create,
+    Update,
+    Delete,
+    Complete,
+    Uncomplete,
+    Stash,
+    Unstash,
+}
+
+impl fmt::Display for OperationType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            OperationType::Create => "create",
+            OperationType::Update => "update",
+            OperationType::Delete => "delete",
+            OperationType::Complete => "complete",
+            OperationType::Uncomplete => "uncomplete",
+            OperationType::Stash => "stash",
+            OperationType::Unstash => "unstash",
+        };
+        write!(f, "{}", s)
+    }
+}
+
+/// Type of entity that an operation was performed on.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum EntityType {
+    Todo,
+    Category,
+}
+
+impl fmt::Display for EntityType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            EntityType::Todo => "todo",
+            EntityType::Category => "category",
+        };
+        write!(f, "{}", s)
+    }
+}
+
+/// Represents a tracked operation for undo/redo and analytics.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Operation {
+    pub id: Uuid,
+    pub operation_type: OperationType,
+    pub entity_type: EntityType,
+    pub entity_id: Uuid,
+    pub previous_state: Option<serde_json::Value>,
+    pub new_state: Option<serde_json::Value>,
+    pub created_at: DateTime<Utc>,
+    pub undone: bool,
+}
+
+impl Operation {
+    pub fn new(
+        operation_type: OperationType,
+        entity_type: EntityType,
+        entity_id: Uuid,
+        previous_state: Option<serde_json::Value>,
+        new_state: Option<serde_json::Value>,
+    ) -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            operation_type,
+            entity_type,
+            entity_id,
+            previous_state,
+            new_state,
+            created_at: Utc::now(),
+            undone: false,
+        }
+    }
 }
 
 #[cfg(test)]

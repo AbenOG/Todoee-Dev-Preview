@@ -12,7 +12,7 @@ use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions};
 use sqlx::FromRow;
 use uuid::Uuid;
 
-use crate::models::{Category, Priority, SyncStatus, Todo};
+use crate::models::{Category, EntityType, Operation, OperationType, Priority, SyncStatus, Todo};
 
 /// Helper struct for mapping todo rows from SQLite.
 #[derive(Debug, FromRow)]
@@ -123,6 +123,63 @@ impl TryFrom<CategoryRow> for Category {
     }
 }
 
+/// Helper struct for mapping operation rows from SQLite.
+#[derive(Debug, FromRow)]
+struct OperationRow {
+    id: String,
+    operation_type: String,
+    entity_type: String,
+    entity_id: String,
+    previous_state: Option<String>,
+    new_state: Option<String>,
+    created_at: String,
+    undone: i32,
+}
+
+impl TryFrom<OperationRow> for Operation {
+    type Error = anyhow::Error;
+
+    fn try_from(row: OperationRow) -> Result<Self> {
+        let operation_type = match row.operation_type.as_str() {
+            "create" => OperationType::Create,
+            "update" => OperationType::Update,
+            "delete" => OperationType::Delete,
+            "complete" => OperationType::Complete,
+            "uncomplete" => OperationType::Uncomplete,
+            "stash" => OperationType::Stash,
+            "unstash" => OperationType::Unstash,
+            _ => anyhow::bail!("Invalid operation type: {}", row.operation_type),
+        };
+
+        let entity_type = match row.entity_type.as_str() {
+            "todo" => EntityType::Todo,
+            "category" => EntityType::Category,
+            _ => anyhow::bail!("Invalid entity type: {}", row.entity_type),
+        };
+
+        Ok(Operation {
+            id: Uuid::parse_str(&row.id).context("Invalid operation id")?,
+            operation_type,
+            entity_type,
+            entity_id: Uuid::parse_str(&row.entity_id).context("Invalid entity_id")?,
+            previous_state: row
+                .previous_state
+                .map(|s| serde_json::from_str(&s))
+                .transpose()
+                .context("Invalid previous_state JSON")?,
+            new_state: row
+                .new_state
+                .map(|s| serde_json::from_str(&s))
+                .transpose()
+                .context("Invalid new_state JSON")?,
+            created_at: DateTime::parse_from_rfc3339(&row.created_at)
+                .map(|dt| dt.with_timezone(&Utc))
+                .context("Invalid created_at")?,
+            undone: row.undone != 0,
+        })
+    }
+}
+
 /// Local SQLite database for offline-first storage.
 pub struct LocalDb {
     pool: SqlitePool,
@@ -211,6 +268,45 @@ impl LocalDb {
             .execute(&self.pool)
             .await
             .context("Failed to create sync_status index")?;
+
+        // Create operations table for undo/redo and analytics
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS operations (
+                id TEXT PRIMARY KEY,
+                operation_type TEXT NOT NULL,
+                entity_type TEXT NOT NULL,
+                entity_id TEXT NOT NULL,
+                previous_state TEXT,
+                new_state TEXT,
+                created_at TEXT NOT NULL,
+                undone INTEGER NOT NULL DEFAULT 0
+            )
+            "#,
+        )
+        .execute(&self.pool)
+        .await
+        .context("Failed to create operations table")?;
+
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_operations_created_at ON operations(created_at DESC)")
+            .execute(&self.pool)
+            .await
+            .context("Failed to create operations created_at index")?;
+
+        // Create stash table for temporarily storing todos
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS stash (
+                id TEXT PRIMARY KEY,
+                todo_json TEXT NOT NULL,
+                stashed_at TEXT NOT NULL,
+                message TEXT
+            )
+            "#,
+        )
+        .execute(&self.pool)
+        .await
+        .context("Failed to create stash table")?;
 
         Ok(())
     }
@@ -475,6 +571,118 @@ impl LocalDb {
             .context("Failed to delete category")?;
 
         Ok(())
+    }
+
+    // ==================== Operation CRUD Operations ====================
+
+    /// Record an operation in the history.
+    pub async fn record_operation(&self, op: &Operation) -> Result<()> {
+        sqlx::query(
+            r#"
+            INSERT INTO operations (
+                id, operation_type, entity_type, entity_id,
+                previous_state, new_state, created_at, undone
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+            "#,
+        )
+        .bind(op.id.to_string())
+        .bind(op.operation_type.to_string())
+        .bind(op.entity_type.to_string())
+        .bind(op.entity_id.to_string())
+        .bind(op.previous_state.as_ref().map(|v| v.to_string()))
+        .bind(op.new_state.as_ref().map(|v| v.to_string()))
+        .bind(op.created_at.to_rfc3339())
+        .bind(if op.undone { 1 } else { 0 })
+        .execute(&self.pool)
+        .await
+        .context("Failed to record operation")?;
+
+        Ok(())
+    }
+
+    /// Get the last operation that can be undone (not yet undone).
+    pub async fn get_last_undoable_operation(&self) -> Result<Option<Operation>> {
+        let row: Option<OperationRow> = sqlx::query_as(
+            "SELECT * FROM operations WHERE undone = 0 ORDER BY created_at DESC LIMIT 1",
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .context("Failed to fetch last undoable operation")?;
+
+        row.map(|r| r.try_into()).transpose()
+    }
+
+    /// Get the last operation that can be redone (already undone).
+    pub async fn get_last_redoable_operation(&self) -> Result<Option<Operation>> {
+        let row: Option<OperationRow> = sqlx::query_as(
+            "SELECT * FROM operations WHERE undone = 1 ORDER BY created_at DESC LIMIT 1",
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .context("Failed to fetch last redoable operation")?;
+
+        row.map(|r| r.try_into()).transpose()
+    }
+
+    /// Mark an operation as undone.
+    pub async fn mark_operation_undone(&self, id: Uuid) -> Result<()> {
+        sqlx::query("UPDATE operations SET undone = 1 WHERE id = ?1")
+            .bind(id.to_string())
+            .execute(&self.pool)
+            .await
+            .context("Failed to mark operation as undone")?;
+
+        Ok(())
+    }
+
+    /// Mark an operation as redone (not undone).
+    pub async fn mark_operation_redone(&self, id: Uuid) -> Result<()> {
+        sqlx::query("UPDATE operations SET undone = 0 WHERE id = ?1")
+            .bind(id.to_string())
+            .execute(&self.pool)
+            .await
+            .context("Failed to mark operation as redone")?;
+
+        Ok(())
+    }
+
+    /// List recent operations, limited by count.
+    pub async fn list_operations(&self, limit: usize) -> Result<Vec<Operation>> {
+        let rows: Vec<OperationRow> = sqlx::query_as(
+            "SELECT * FROM operations ORDER BY created_at DESC LIMIT ?1",
+        )
+        .bind(limit as i64)
+        .fetch_all(&self.pool)
+        .await
+        .context("Failed to list operations")?;
+
+        rows.into_iter().map(|r| r.try_into()).collect()
+    }
+
+    /// List operations since a given timestamp.
+    pub async fn list_operations_since(&self, since: DateTime<Utc>) -> Result<Vec<Operation>> {
+        let rows: Vec<OperationRow> = sqlx::query_as(
+            "SELECT * FROM operations WHERE created_at >= ?1 ORDER BY created_at DESC",
+        )
+        .bind(since.to_rfc3339())
+        .fetch_all(&self.pool)
+        .await
+        .context("Failed to list operations since timestamp")?;
+
+        rows.into_iter().map(|r| r.try_into()).collect()
+    }
+
+    /// Clear operations older than the specified number of days.
+    /// Returns the number of deleted operations.
+    pub async fn clear_old_operations(&self, days: i64) -> Result<u64> {
+        let cutoff = Utc::now() - chrono::Duration::days(days);
+        let result = sqlx::query("DELETE FROM operations WHERE created_at < ?1")
+            .bind(cutoff.to_rfc3339())
+            .execute(&self.pool)
+            .await
+            .context("Failed to clear old operations")?;
+
+        Ok(result.rows_affected())
     }
 }
 
