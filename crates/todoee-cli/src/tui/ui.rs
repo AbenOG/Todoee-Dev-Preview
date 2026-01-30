@@ -316,6 +316,7 @@ fn render_help(app: &App, frame: &mut Frame, area: Rect) {
         Mode::Adding => "Enter:submit  Shift+Enter:no-AI  Tab:priority  Esc:cancel",
         Mode::Editing => "Enter:submit  Esc:cancel",
         Mode::EditingFull => "Tab:next  Shift+Tab:prev  Enter:save  Esc:cancel",
+        Mode::AddingFull => "Tab:next  Shift+Tab:prev  Enter:save  Esc:cancel",
         Mode::Searching => "Enter:apply  Esc:cancel  Ctrl+U:clear",
         Mode::Help => "Press any key to close",
         Mode::ViewingDetail => "Esc/q/v/Enter: close detail view",

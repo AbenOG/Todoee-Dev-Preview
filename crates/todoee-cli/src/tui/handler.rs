@@ -21,6 +21,7 @@ pub async fn handle_key_event(app: &mut App, key: KeyEvent) -> Result<()> {
         Mode::Help => handle_help_mode(app, key),
         Mode::ViewingDetail => handle_viewing_detail_mode(app, key),
         Mode::AddingCategory => handle_adding_category_mode(app, key).await?,
+        Mode::AddingFull => handle_adding_full_mode(app, key).await?,
     }
 
     Ok(())
@@ -454,6 +455,16 @@ async fn handle_adding_category_mode(app: &mut App, key: KeyEvent) -> Result<()>
         _ => {
             app.input.handle_event(&crossterm::event::Event::Key(key));
         }
+    }
+    Ok(())
+}
+
+/// Handle input in AddingFull mode (placeholder - to be implemented in Task 4)
+async fn handle_adding_full_mode(app: &mut App, key: KeyEvent) -> Result<()> {
+    // Placeholder: just allow Escape to cancel
+    if key.code == KeyCode::Esc {
+        app.mode = Mode::Normal;
+        app.add_state = None;
     }
     Ok(())
 }

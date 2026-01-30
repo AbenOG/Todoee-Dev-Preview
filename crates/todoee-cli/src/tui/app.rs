@@ -31,6 +31,8 @@ pub enum Mode {
     ViewingDetail,
     /// Adding a new category
     AddingCategory,
+    /// Adding a new task with full fields
+    AddingFull,
 }
 
 /// Field being edited in full edit mode
@@ -40,6 +42,19 @@ pub enum EditField {
     Description,
     Priority,
     DueDate,
+    Category,
+}
+
+/// Field being edited in add mode
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[allow(dead_code)]
+pub enum AddField {
+    #[default]
+    Title,
+    Description,
+    Priority,
+    DueDate,
+    Reminder,
     Category,
 }
 
@@ -100,6 +115,30 @@ impl EditState {
     }
 }
 
+/// State for adding a new todo with multiple fields
+#[derive(Debug, Clone, Default)]
+#[allow(dead_code)]
+pub struct AddState {
+    pub title: String,
+    pub description: String,
+    pub priority: Priority,
+    pub due_date: Option<String>,      // YYYY-MM-DD format
+    pub reminder: Option<String>,      // YYYY-MM-DD HH:MM format
+    pub category_name: Option<String>,
+    pub active_field: AddField,
+}
+
+#[allow(dead_code)]
+impl AddState {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn is_valid(&self) -> bool {
+        !self.title.trim().is_empty()
+    }
+}
+
 /// Filter state for the task list
 #[derive(Debug, Clone, Default)]
 pub struct Filter {
@@ -136,6 +175,8 @@ pub struct App {
     pub config: Config,
     /// Edit state for full todo editing
     pub edit_state: Option<EditState>,
+    /// Add state for creating new todos
+    pub add_state: Option<AddState>,
     /// Current view/tab
     pub current_view: View,
     /// Selected category index
@@ -169,6 +210,7 @@ impl App {
             db,
             config,
             edit_state: None,
+            add_state: None,
             current_view: View::default(),
             category_selected: 0,
             settings_section: SettingsSection::default(),
