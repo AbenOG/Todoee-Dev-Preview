@@ -15,6 +15,7 @@ pub async fn handle_key_event(app: &mut App, key: KeyEvent) -> Result<()> {
         Mode::Editing => handle_editing_mode(app, key).await?,
         Mode::Searching => handle_searching_mode(app, key).await?,
         Mode::Help => handle_help_mode(app, key),
+        Mode::ViewingDetail => handle_viewing_detail_mode(app, key),
     }
 
     Ok(())
@@ -170,4 +171,13 @@ async fn handle_searching_mode(app: &mut App, key: KeyEvent) -> Result<()> {
 
 fn handle_help_mode(app: &mut App, _key: KeyEvent) {
     app.mode = Mode::Normal;
+}
+
+fn handle_viewing_detail_mode(app: &mut App, key: KeyEvent) {
+    match key.code {
+        KeyCode::Esc | KeyCode::Char('q') | KeyCode::Enter => {
+            app.mode = Mode::Normal;
+        }
+        _ => {}
+    }
 }

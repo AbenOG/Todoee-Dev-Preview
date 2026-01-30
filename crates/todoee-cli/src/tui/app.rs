@@ -15,6 +15,8 @@ pub enum Mode {
     Searching,
     /// Showing help
     Help,
+    /// Viewing todo details
+    ViewingDetail,
 }
 
 /// Filter state for the task list

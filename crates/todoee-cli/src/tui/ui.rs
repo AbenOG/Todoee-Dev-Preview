@@ -216,7 +216,7 @@ fn render_help(app: &App, frame: &mut Frame, area: Rect) {
     let help_text = match app.mode {
         Mode::Adding | Mode::Editing => "Enter:submit  Esc:cancel",
         Mode::Searching => "Enter:apply  Esc:cancel  Ctrl+U:clear",
-        Mode::Help => "Press any key to close",
+        Mode::Help | Mode::ViewingDetail => "Press any key to close",
         Mode::Normal => "j/k:nav  a:add  d:done  x:del  e:edit  /:search  t:today  ?:help  q:quit",
     };
 
