@@ -115,6 +115,38 @@ enum Commands {
         #[arg(long)]
         hours: Option<i64>,
     },
+
+    /// Show last N todos (most recent)
+    Head {
+        /// Number of todos to show (default: 5)
+        #[arg(default_value = "5")]
+        count: usize,
+
+        /// Include completed todos
+        #[arg(short, long)]
+        all: bool,
+    },
+
+    /// Show oldest N todos
+    Tail {
+        /// Number of todos to show (default: 5)
+        #[arg(default_value = "5")]
+        count: usize,
+
+        /// Include completed todos
+        #[arg(short, long)]
+        all: bool,
+    },
+
+    /// Show next N upcoming todos by due date
+    Upcoming {
+        /// Number of todos to show (default: 5)
+        #[arg(default_value = "5")]
+        count: usize,
+    },
+
+    /// Show all overdue todos
+    Overdue,
 }
 
 #[tokio::main]
@@ -174,6 +206,18 @@ async fn main() -> Result<()> {
         }
         Commands::Diff { hours } => {
             commands::diff::run(hours).await?;
+        }
+        Commands::Head { count, all } => {
+            commands::head::head(count, all).await?;
+        }
+        Commands::Tail { count, all } => {
+            commands::head::tail(count, all).await?;
+        }
+        Commands::Upcoming { count } => {
+            commands::upcoming::upcoming(count).await?;
+        }
+        Commands::Overdue => {
+            commands::upcoming::overdue().await?;
         }
     }
 

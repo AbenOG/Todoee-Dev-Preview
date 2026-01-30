@@ -4,11 +4,13 @@ pub mod delete;
 pub mod diff;
 pub mod done;
 pub mod edit;
+pub mod head;
 pub mod list;
 pub mod log;
 pub mod redo;
 pub mod sync;
 pub mod undo;
+pub mod upcoming;
 
 pub use add::run as add;
 pub use config::run as config;

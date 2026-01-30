@@ -684,6 +684,73 @@ impl LocalDb {
 
         Ok(result.rows_affected())
     }
+
+    // ==================== Head/Tail/Upcoming/Overdue Queries ====================
+
+    /// List N most recently created todos.
+    pub async fn list_todos_head(&self, limit: usize, include_completed: bool) -> Result<Vec<Todo>> {
+        let query = if include_completed {
+            "SELECT * FROM todos ORDER BY created_at DESC LIMIT ?1"
+        } else {
+            "SELECT * FROM todos WHERE is_completed = 0 ORDER BY created_at DESC LIMIT ?1"
+        };
+
+        let rows: Vec<TodoRow> = sqlx::query_as(query)
+            .bind(limit as i64)
+            .fetch_all(&self.pool)
+            .await
+            .context("Failed to list head todos")?;
+
+        rows.into_iter().map(|r| r.try_into()).collect()
+    }
+
+    /// List N oldest todos.
+    pub async fn list_todos_tail(&self, limit: usize, include_completed: bool) -> Result<Vec<Todo>> {
+        let query = if include_completed {
+            "SELECT * FROM todos ORDER BY created_at ASC LIMIT ?1"
+        } else {
+            "SELECT * FROM todos WHERE is_completed = 0 ORDER BY created_at ASC LIMIT ?1"
+        };
+
+        let rows: Vec<TodoRow> = sqlx::query_as(query)
+            .bind(limit as i64)
+            .fetch_all(&self.pool)
+            .await
+            .context("Failed to list tail todos")?;
+
+        rows.into_iter().map(|r| r.try_into()).collect()
+    }
+
+    /// List N upcoming todos by due date (future only).
+    pub async fn list_todos_upcoming(&self, limit: usize) -> Result<Vec<Todo>> {
+        let now = Utc::now().to_rfc3339();
+
+        let rows: Vec<TodoRow> = sqlx::query_as(
+            "SELECT * FROM todos WHERE is_completed = 0 AND due_date IS NOT NULL AND due_date >= ?1 ORDER BY due_date ASC LIMIT ?2",
+        )
+        .bind(&now)
+        .bind(limit as i64)
+        .fetch_all(&self.pool)
+        .await
+        .context("Failed to list upcoming todos")?;
+
+        rows.into_iter().map(|r| r.try_into()).collect()
+    }
+
+    /// List all overdue todos.
+    pub async fn list_todos_overdue(&self) -> Result<Vec<Todo>> {
+        let now = Utc::now().to_rfc3339();
+
+        let rows: Vec<TodoRow> = sqlx::query_as(
+            "SELECT * FROM todos WHERE is_completed = 0 AND due_date IS NOT NULL AND due_date < ?1 ORDER BY due_date ASC",
+        )
+        .bind(&now)
+        .fetch_all(&self.pool)
+        .await
+        .context("Failed to list overdue todos")?;
+
+        rows.into_iter().map(|r| r.try_into()).collect()
+    }
 }
 
 #[cfg(test)]
