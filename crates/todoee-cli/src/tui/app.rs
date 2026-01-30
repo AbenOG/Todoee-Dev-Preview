@@ -534,7 +534,7 @@ impl App {
             self.db.record_operation(&op).await?;
 
             self.clear_loading();
-            self.status_message = Some(format!("Completed: {}", title));
+            self.status_message = Some(format!("✓ Completed: {}", title));
             self.refresh_todos().await?;
         } else if self.todos.get(self.selected).is_some() {
             self.status_message = Some("Already completed".to_string());
@@ -565,7 +565,7 @@ impl App {
             self.db.record_operation(&op).await?;
 
             self.clear_loading();
-            self.status_message = Some(format!("Deleted: {}", title));
+            self.status_message = Some(format!("✗ Deleted: {}", title));
             self.refresh_todos().await?;
         }
         Ok(())
@@ -654,7 +654,7 @@ impl App {
         );
         self.db.record_operation(&op).await?;
 
-        self.status_message = Some(format!("Added: {}", title));
+        self.status_message = Some(format!("✓ Added: {}", title));
         self.input.reset();
         self.refresh_todos().await?;
 
@@ -725,7 +725,7 @@ impl App {
         category.color = color;
         self.db.create_category(&category).await?;
         self.clear_loading();
-        self.status_message = Some(format!("Created category: {}", name));
+        self.status_message = Some(format!("✓ Created category: {}", name));
         self.refresh_categories().await?;
         Ok(())
     }
@@ -945,7 +945,7 @@ impl App {
         self.db.record_operation(&op).await?;
 
         self.clear_loading();
-        self.status_message = Some(format!("Added: {}", title));
+        self.status_message = Some(format!("✓ Added: {}", title));
         self.refresh_todos().await?;
 
         Ok(())
