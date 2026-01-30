@@ -36,6 +36,7 @@ impl<'a> TodoEditorWidget<'a> {
                 Constraint::Length(5), // Description
                 Constraint::Length(3), // Priority
                 Constraint::Length(3), // Due date
+                Constraint::Length(3), // Category
             ])
             .split(inner);
 
@@ -83,6 +84,20 @@ impl<'a> TodoEditorWidget<'a> {
             "Due Date",
             due_text,
             self.state.active_field == EditField::DueDate,
+        );
+
+        // Category field
+        let cat_text = self
+            .state
+            .category_name
+            .as_deref()
+            .unwrap_or("(none - press any key to cycle)");
+        self.render_field(
+            frame,
+            chunks[4],
+            "Category",
+            cat_text,
+            self.state.active_field == EditField::Category,
         );
     }
 

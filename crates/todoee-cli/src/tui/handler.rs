@@ -72,7 +72,7 @@ async fn handle_todos_view(app: &mut App, key: KeyEvent) -> Result<()> {
         }
         KeyCode::Char('e') => {
             if let Some(todo) = app.selected_todo() {
-                app.edit_state = Some(EditState::from_todo(todo));
+                app.edit_state = Some(EditState::from_todo(todo, &app.categories));
                 app.mode = Mode::EditingFull;
             }
         }
@@ -316,20 +316,23 @@ async fn handle_editing_full_mode(app: &mut App, key: KeyEvent) -> Result<()> {
                 EditField::Title => EditField::Description,
                 EditField::Description => EditField::Priority,
                 EditField::Priority => EditField::DueDate,
-                EditField::DueDate => EditField::Title,
+                EditField::DueDate => EditField::Category,
+                EditField::Category => EditField::Title,
             };
         }
         KeyCode::BackTab => {
             state.active_field = match state.active_field {
-                EditField::Title => EditField::DueDate,
+                EditField::Title => EditField::Category,
                 EditField::Description => EditField::Title,
                 EditField::Priority => EditField::Description,
                 EditField::DueDate => EditField::Priority,
+                EditField::Category => EditField::DueDate,
             };
         }
         KeyCode::Enter => {
             // Save changes
             let todo_id = state.todo_id;
+            let category_name = state.category_name.clone();
             if let Some(todo) = app.todos.iter_mut().find(|t| t.id == todo_id) {
                 todo.title = state.title.clone();
                 todo.description = if state.description.is_empty() { None } else { Some(state.description.clone()) };
@@ -339,6 +342,10 @@ async fn handle_editing_full_mode(app: &mut App, key: KeyEvent) -> Result<()> {
                         .ok()
                         .and_then(|d| d.and_hms_opt(12, 0, 0))
                         .map(|dt| chrono::Utc.from_utc_datetime(&dt))
+                });
+                // Set category_id from name
+                todo.category_id = category_name.as_ref().and_then(|name| {
+                    app.categories.iter().find(|c| &c.name == name).map(|c| c.id)
                 });
                 todo.updated_at = chrono::Utc::now();
                 todo.sync_status = todoee_core::SyncStatus::Pending;
@@ -367,6 +374,23 @@ async fn handle_editing_full_mode(app: &mut App, key: KeyEvent) -> Result<()> {
                         due.push(c);
                     }
                 }
+                EditField::Category => {
+                    // Cycle through categories with any key
+                    let cat_names: Vec<_> = app.categories.iter().map(|c| c.name.clone()).collect();
+                    if !cat_names.is_empty() {
+                        state.category_name = match &state.category_name {
+                            None => Some(cat_names[0].clone()),
+                            Some(current) => {
+                                let idx = cat_names.iter().position(|n| n == current).unwrap_or(0);
+                                if idx + 1 < cat_names.len() {
+                                    Some(cat_names[idx + 1].clone())
+                                } else {
+                                    None
+                                }
+                            }
+                        };
+                    }
+                }
             }
         }
         KeyCode::Backspace => {
@@ -381,6 +405,10 @@ async fn handle_editing_full_mode(app: &mut App, key: KeyEvent) -> Result<()> {
                             state.due_date = None;
                         }
                     }
+                }
+                EditField::Category => {
+                    // Backspace clears category
+                    state.category_name = None;
                 }
             }
         }

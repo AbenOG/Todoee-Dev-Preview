@@ -39,6 +39,7 @@ pub enum EditField {
     Description,
     Priority,
     DueDate,
+    Category,
 }
 
 /// Settings panel section
@@ -77,17 +78,22 @@ pub struct EditState {
     pub description: String,
     pub priority: Priority,
     pub due_date: Option<String>,  // Store as string for editing
+    pub category_name: Option<String>,
     pub active_field: EditField,
 }
 
 impl EditState {
-    pub fn from_todo(todo: &Todo) -> Self {
+    pub fn from_todo(todo: &Todo, categories: &[Category]) -> Self {
+        let category_name = todo.category_id.and_then(|id| {
+            categories.iter().find(|c| c.id == id).map(|c| c.name.clone())
+        });
         Self {
             todo_id: todo.id,
             title: todo.title.clone(),
             description: todo.description.clone().unwrap_or_default(),
             priority: todo.priority,
             due_date: todo.due_date.map(|d| d.format("%Y-%m-%d").to_string()),
+            category_name,
             active_field: EditField::Title,
         }
     }
