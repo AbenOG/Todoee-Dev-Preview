@@ -313,7 +313,7 @@ fn render_status(app: &App, frame: &mut Frame, area: Rect) {
 
 fn render_help(app: &App, frame: &mut Frame, area: Rect) {
     let help_text = match app.mode {
-        Mode::Adding => "Enter:submit  Esc:cancel",
+        Mode::Adding => "Enter:submit  Shift+Enter:no-AI  Tab:priority  Esc:cancel",
         Mode::Editing => "Enter:submit  Esc:cancel",
         Mode::EditingFull => "Tab:next  Shift+Tab:prev  Enter:save  Esc:cancel",
         Mode::Searching => "Enter:apply  Esc:cancel  Ctrl+U:clear",
@@ -397,6 +397,16 @@ fn render_help_modal(frame: &mut Frame) {
         Line::from("  Tab         Next field"),
         Line::from("  Shift+Tab   Previous field"),
         Line::from("  Enter       Save"),
+        Line::from("  Esc         Cancel"),
+        Line::from(""),
+        Line::from(Span::styled(
+            "Adding Task",
+            Style::default().fg(Color::Yellow),
+        )),
+        Line::from("  Enter       Submit (with AI if enabled)"),
+        Line::from("  Shift+Enter Submit without AI"),
+        Line::from("  Tab         Cycle priority (None→Low→Med→High)"),
+        Line::from("  Ctrl+1/2/3  Set priority (Low/Med/High)"),
         Line::from("  Esc         Cancel"),
     ];
 
