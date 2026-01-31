@@ -1000,20 +1000,31 @@ impl App {
         let todo_id = todo.id;
         let previous_state = serde_json::to_value(&todo).ok();
 
-        self.db.stash_todo(todo_id, None).await?;
+        match self.db.stash_todo(todo_id, None).await {
+            Ok(_) => {
+                // Record operation for undo/redo
+                let op = Operation::new(
+                    OperationType::Stash,
+                    EntityType::Todo,
+                    todo_id,
+                    previous_state,
+                    None,
+                );
+                self.db.record_operation(&op).await?;
 
-        // Record operation for undo/redo
-        let op = Operation::new(
-            OperationType::Stash,
-            EntityType::Todo,
-            todo_id,
-            previous_state,
-            None,
-        );
-        self.db.record_operation(&op).await?;
-
-        self.status_message = Some(format!("✓ Stashed: {}", title));
-        self.refresh_todos().await?;
+                self.status_message = Some(format!("✓ Stashed: {}", title));
+                self.refresh_todos().await?;
+                self.clamp_selection();
+            }
+            Err(e) => {
+                let msg = e.to_string();
+                if msg.contains("already stashed") {
+                    self.status_message = Some("Todo is already stashed".to_string());
+                } else {
+                    self.status_message = Some(format!("Stash failed: {}", msg));
+                }
+            }
+        }
         Ok(())
     }
 

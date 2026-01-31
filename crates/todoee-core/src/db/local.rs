@@ -767,7 +767,23 @@ impl LocalDb {
     // ==================== Stash Operations ====================
 
     /// Stash a todo (hide it temporarily).
+    ///
+    /// # Errors
+    /// Returns error if todo doesn't exist or is already stashed.
     pub async fn stash_todo(&self, todo_id: Uuid, message: Option<&str>) -> Result<Todo> {
+        // Check if already stashed
+        let already_stashed: Option<(String,)> = sqlx::query_as(
+            "SELECT id FROM stash WHERE id = ?"
+        )
+            .bind(todo_id.to_string())
+            .fetch_optional(&self.pool)
+            .await
+            .context("Failed to check stash")?;
+
+        if already_stashed.is_some() {
+            anyhow::bail!("Todo is already stashed");
+        }
+
         let todo = self
             .get_todo(todo_id)
             .await?
