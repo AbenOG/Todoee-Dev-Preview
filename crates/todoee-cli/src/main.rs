@@ -349,8 +349,12 @@ enum Commands {
         mode: String,
     },
 
-    /// Sync todos with remote server
-    Sync,
+    /// Sync with cloud storage
+    Sync {
+        /// Force sync even if recently synced
+        #[arg(short, long)]
+        force: bool,
+    },
 
     /// Configure todoee settings
     ///
@@ -415,8 +419,8 @@ async fn main() -> Result<()> {
         } => {
             commands::edit(id, title, category, priority).await?;
         }
-        Commands::Sync => {
-            commands::sync().await?;
+        Commands::Sync { force } => {
+            commands::sync(force).await?;
         }
         Commands::Config { init } => {
             commands::config(init).await?;

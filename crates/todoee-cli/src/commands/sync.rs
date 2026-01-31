@@ -1,39 +1,39 @@
-use anyhow::Result;
-use std::env;
+use anyhow::{Context, Result};
+use todoee_core::{config::Config, sync::SyncService};
 
-pub async fn run() -> Result<()> {
-    // Check if NEON_DATABASE_URL is set
-    let neon_url = env::var("NEON_DATABASE_URL");
+pub async fn run(force: bool) -> Result<()> {
+    // Note: `force` parameter reserved for future use (e.g., skip "recently synced" check)
+    let _ = force;
 
-    match neon_url {
-        Ok(_) => {
-            // Database URL is configured
-            println!("Cloud sync not yet implemented.");
-            println!();
-            println!("Your todos are being stored locally and will sync");
-            println!("automatically when this feature is available.");
-            println!();
-            println!("For now, your data is safe in the local database.");
-        }
-        Err(_) => {
-            // Database URL is not set - show setup instructions
-            println!("Cloud sync is not configured.");
-            println!();
-            println!("To enable cloud sync with Neon PostgreSQL:");
-            println!();
-            println!("1. Create a free Neon database at https://neon.tech");
-            println!();
-            println!("2. Copy your connection string from the Neon dashboard");
-            println!();
-            println!("3. Set the environment variable:");
-            println!(
-                "   export NEON_DATABASE_URL=\"postgres://user:pass@host/db?sslmode=require\""
-            );
-            println!();
-            println!("4. Add it to your shell profile (~/.bashrc or ~/.zshrc) for persistence");
-            println!();
-            println!("Until then, your todos are stored locally and work offline.");
-        }
+    let config = Config::load().context("Failed to load configuration")?;
+
+    let service = SyncService::new(&config)
+        .await
+        .context("Failed to initialize sync service")?;
+
+    if !service.is_configured() {
+        println!("\u{2139}  Cloud sync is not configured.\n");
+        println!("To enable sync with Neon Postgres:");
+        println!("  1. Create a free database at https://neon.tech");
+        println!("  2. Copy your connection string");
+        println!("  3. Set the environment variable:");
+        println!("     export NEON_DATABASE_URL=\"postgres://...\"");
+        println!("\nThen run `todoee sync` again.");
+        return Ok(());
+    }
+
+    println!("\u{1F504} Syncing with cloud...");
+
+    let result = service.sync().await.context("Sync failed")?;
+
+    println!("\u{2713} Sync complete!");
+    println!("  Uploaded:   {} todos", result.uploaded);
+    println!("  Downloaded: {} todos", result.downloaded);
+    if result.conflicts > 0 {
+        println!(
+            "  Conflicts:  {} (resolved with last-write-wins)",
+            result.conflicts
+        );
     }
 
     Ok(())
