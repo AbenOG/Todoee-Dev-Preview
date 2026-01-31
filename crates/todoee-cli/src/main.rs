@@ -334,6 +334,21 @@ enum Commands {
         include_completed: bool,
     },
 
+    /// Import todos from a file
+    ///
+    /// Examples:
+    ///   todoee import backup.json              Import from JSON file
+    ///   todoee import backup.json --mode merge Skip existing todos
+    ///   todoee import backup.json --mode replace Overwrite existing todos
+    Import {
+        /// Input file path
+        input: String,
+
+        /// Import mode: merge (skip existing) or replace (overwrite)
+        #[arg(short, long, default_value = "merge")]
+        mode: String,
+    },
+
     /// Sync todos with remote server
     Sync,
 
@@ -447,6 +462,9 @@ async fn main() -> Result<()> {
         }
         Commands::Export { output, format, include_completed } => {
             commands::export::run(output, format, include_completed).await?;
+        }
+        Commands::Import { input, mode } => {
+            commands::import::run(input, mode).await?;
         }
         Commands::Focus { id, duration } => {
             commands::focus::run(id, duration).await?;

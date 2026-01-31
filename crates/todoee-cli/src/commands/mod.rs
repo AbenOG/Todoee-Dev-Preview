@@ -10,6 +10,7 @@ pub mod focus;
 pub mod gc;
 pub mod head;
 pub mod help;
+pub mod import;
 pub mod insights;
 pub mod list;
 pub mod log;
