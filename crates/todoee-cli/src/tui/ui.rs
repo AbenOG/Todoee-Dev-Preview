@@ -305,10 +305,23 @@ fn render_tasks(app: &App, frame: &mut Frame, area: Rect) {
                 Style::default()
             };
 
-            let selector = if is_selected { "▸ " } else { "  " };
+            // Animated cursor: alternates between filled and outline arrow
+            let selector = if is_selected {
+                let cursors = ['▸', '▹', '▸', '▹'];
+                format!("{} ", cursors[app.animation_frame % cursors.len()])
+            } else {
+                "  ".to_string()
+            };
 
             let content = Line::from(vec![
-                Span::styled(selector, Style::default().fg(Color::Cyan)),
+                Span::styled(
+                    selector,
+                    if is_selected {
+                        Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)
+                    } else {
+                        Style::default()
+                    },
+                ),
                 Span::styled(
                     status,
                     if todo.is_completed {
