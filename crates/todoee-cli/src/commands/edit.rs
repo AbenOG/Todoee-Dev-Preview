@@ -17,10 +17,10 @@ pub async fn run(
         anyhow::bail!("At least one of --title, --category, or --priority must be provided");
     }
 
-    if let Some(ref t) = title {
-        if t.trim().is_empty() {
-            anyhow::bail!("Title cannot be empty");
-        }
+    if let Some(ref t) = title
+        && t.trim().is_empty()
+    {
+        anyhow::bail!("Title cannot be empty");
     }
 
     // Load config and open local database

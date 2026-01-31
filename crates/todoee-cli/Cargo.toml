@@ -3,6 +3,9 @@ name = "todoee-cli"
 version.workspace = true
 edition.workspace = true
 
+[lib]
+path = "src/lib.rs"
+
 [[bin]]
 name = "todoee"
 path = "src/main.rs"

@@ -1,6 +1,7 @@
 pub mod app;
 pub mod event;
 pub mod handler;
+pub mod spinner;
 pub mod terminal;
 pub mod theme;
 pub mod ui;

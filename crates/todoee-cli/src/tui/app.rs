@@ -72,6 +72,7 @@ impl FocusState {
         }
     }
 
+    #[allow(dead_code)]
     pub fn is_complete(&self) -> bool {
         self.remaining_secs() == 0
     }
@@ -546,13 +547,12 @@ impl App {
     /// Delete selected todo
     pub async fn delete_selected(&mut self) -> Result<()> {
         // Prevent deleting a todo that's currently being focused on
-        if let Some(ref focus) = self.focus_state {
-            if let Some(todo) = self.todos.get(self.selected) {
-                if todo.id == focus.todo_id {
-                    self.status_message = Some("Cannot delete: todo is in focus mode".to_string());
-                    return Ok(());
-                }
-            }
+        if let Some(ref focus) = self.focus_state
+            && let Some(todo) = self.todos.get(self.selected)
+            && todo.id == focus.todo_id
+        {
+            self.status_message = Some("Cannot delete: todo is in focus mode".to_string());
+            return Ok(());
         }
 
         // Extract necessary data before borrowing self mutably
