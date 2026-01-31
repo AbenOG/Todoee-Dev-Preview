@@ -515,24 +515,22 @@ fn render_help_modal(frame: &mut Frame) {
 }
 
 fn render_loading_overlay(app: &App, frame: &mut Frame) {
-    let area = centered_rect(40, 15, frame.area());
+    let area = centered_rect(45, 20, frame.area());
 
-    // Animated spinner characters
-    let spinner_chars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
-    let idx = (std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis()
-        / 100) as usize
-        % spinner_chars.len();
-    let spinner = spinner_chars[idx];
+    // Use frame-based animation from app state
+    let spinner_char = app.spinner_style.frame(app.animation_frame);
 
     let message = app.loading_message.as_deref().unwrap_or("Loading...");
+
+    // Animated dots after message
+    let dots_count = app.animation_frame % 4;
+    let dots = ".".repeat(dots_count);
+    let dots_padding = " ".repeat(3 - dots_count);
 
     let content = vec![
         Line::from(""),
         Line::from(Span::styled(
-            format!("  {}  {}", spinner, message),
+            format!("  {}  {}{}{}", spinner_char, message, dots, dots_padding),
             Style::default()
                 .fg(Color::Cyan)
                 .add_modifier(Modifier::BOLD),
