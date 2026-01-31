@@ -397,108 +397,114 @@ fn render_help(app: &App, frame: &mut Frame, area: Rect) {
 }
 
 fn render_help_modal(frame: &mut Frame) {
-    let area = centered_rect(70, 85, frame.area());
+    let area = centered_rect(75, 90, frame.area());
 
     let help_text = vec![
         Line::from(Span::styled(
-            "Keyboard Shortcuts",
+            "═══ TODOEE KEYBOARD SHORTCUTS ═══",
             Style::default().bold().fg(Color::Cyan),
         )),
         Line::from(""),
-        Line::from(Span::styled("Views", Style::default().fg(Color::Yellow))),
-        Line::from("  1           Todos view"),
-        Line::from("  2           Categories view"),
-        Line::from("  3           Settings view"),
-        Line::from("  ?           Toggle help"),
-        Line::from(""),
+        // ─────────────────────────────────────────────────────────────────
         Line::from(Span::styled(
-            "Todos View",
-            Style::default().fg(Color::Yellow),
+            "─── NAVIGATION ───",
+            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
         )),
-        Line::from("  j / ↓       Move down"),
-        Line::from("  k / ↑       Move up"),
-        Line::from("  g           Jump to top"),
-        Line::from("  G           Jump to bottom"),
-        Line::from("  a           Add task (full editor)"),
-        Line::from("  A           Quick add (AI-powered)"),
-        Line::from("  e           Edit todo (full editor)"),
-        Line::from("  v / Space   View details"),
-        Line::from("  Enter       Toggle complete"),
-        Line::from("  d           Mark as done"),
-        Line::from("  x           Delete todo"),
-        Line::from("  z           Stash todo"),
-        Line::from("  Z           Pop from stash"),
+        Line::from("  j / ↓       Move down            g           Jump to top"),
+        Line::from("  k / ↑       Move up              G           Jump to bottom"),
+        Line::from("  1 / 2 / 3   Switch views (Todos/Categories/Settings)"),
+        Line::from(""),
+        // ─────────────────────────────────────────────────────────────────
+        Line::from(Span::styled(
+            "─── CORE ACTIONS ───",
+            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+        )),
+        Line::from("  a           Add task (full editor with all fields)"),
+        Line::from("  A           Quick add (single line, AI-powered)"),
+        Line::from("  e           Edit selected task"),
+        Line::from("  d / Enter   Mark as done"),
+        Line::from("  x           Delete task"),
+        Line::from("  v / Space   View task details"),
+        Line::from(""),
+        // ─────────────────────────────────────────────────────────────────
+        Line::from(Span::styled(
+            "─── GIT-LIKE COMMANDS ───",
+            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+        )),
         Line::from("  u           Undo last action"),
         Line::from("  Ctrl+r      Redo last undone action"),
-        Line::from("  /           Search"),
-        Line::from("  p           Cycle priority filter"),
-        Line::from("  s           Cycle sort field"),
-        Line::from("  S           Toggle sort order"),
+        Line::from("  z           Stash selected task (hide temporarily)"),
+        Line::from("  Z           Pop from stash (restore last stashed)"),
+        Line::from(""),
+        // ─────────────────────────────────────────────────────────────────
+        Line::from(Span::styled(
+            "─── FILTERS & SORTING ───",
+            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+        )),
+        Line::from("  /           Search (fuzzy matching)"),
         Line::from("  t           Toggle today filter"),
         Line::from("  o           Toggle overdue filter"),
-        Line::from("  Tab         Toggle show completed"),
+        Line::from("  p           Cycle priority filter (All→High→Med→Low)"),
         Line::from("  c           Cycle category filter"),
-        Line::from("  i           View insights"),
-        Line::from("  n           Jump to recommended task"),
-        Line::from("  f           Start focus (25 min)"),
+        Line::from("  s           Cycle sort (Created→Due→Priority→Title)"),
+        Line::from("  S           Toggle sort order (Asc/Desc)"),
+        Line::from("  Tab         Toggle show/hide completed"),
+        Line::from(""),
+        // ─────────────────────────────────────────────────────────────────
+        Line::from(Span::styled(
+            "─── PRODUCTIVITY ───",
+            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+        )),
+        Line::from("  n           Jump to recommended task (smart pick)"),
+        Line::from("  f           Start focus session (25 min pomodoro)"),
         Line::from("  F           Quick focus (5 min)"),
-        Line::from("  Esc         Close modal/cancel"),
-        Line::from("  q           Quit"),
+        Line::from("  i           View productivity insights"),
         Line::from(""),
+        // ─────────────────────────────────────────────────────────────────
         Line::from(Span::styled(
-            "Categories View",
-            Style::default().fg(Color::Yellow),
+            "─── FOCUS MODE ───",
+            Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
         )),
-        Line::from("  j / ↓       Move down"),
-        Line::from("  k / ↑       Move up"),
-        Line::from("  a           Add category"),
-        Line::from("  x           Delete category"),
-        Line::from("  Esc         Cancel"),
-        Line::from("  q           Quit"),
+        Line::from("  Space       Pause / Resume timer"),
+        Line::from("  Enter       Complete early"),
+        Line::from("  q / Esc     Cancel focus session"),
         Line::from(""),
+        // ─────────────────────────────────────────────────────────────────
         Line::from(Span::styled(
-            "Settings View",
-            Style::default().fg(Color::Yellow),
+            "─── EDITOR MODE ───",
+            Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
         )),
-        Line::from("  j / ↓       Next section"),
-        Line::from("  k / ↑       Previous section"),
-        Line::from("  r           Reload config"),
-        Line::from("  q           Quit"),
+        Line::from("  Tab         Next field           Shift+Tab   Previous field"),
+        Line::from("  1 / 2 / 3   Set priority (on priority field)"),
+        Line::from("  Enter       Save changes         Esc         Cancel"),
         Line::from(""),
+        // ─────────────────────────────────────────────────────────────────
         Line::from(Span::styled(
-            "Editor (when editing todo)",
-            Style::default().fg(Color::Yellow),
+            "─── QUICK ADD (A) ───",
+            Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
         )),
-        Line::from("  Tab         Next field"),
-        Line::from("  Shift+Tab   Previous field"),
-        Line::from("  Enter       Save"),
-        Line::from("  Esc         Cancel"),
-        Line::from(""),
-        Line::from(Span::styled(
-            "Quick Add Mode (Shift+A)",
-            Style::default().fg(Color::Yellow),
-        )),
-        Line::from("  Enter       Submit (with AI if enabled)"),
+        Line::from("  Enter       Submit with AI parsing"),
         Line::from("  Shift+Enter Submit without AI"),
-        Line::from("  Tab         Cycle priority (None→Low→Med→High)"),
-        Line::from("  Ctrl+1/2/3  Set priority (Low/Med/High)"),
-        Line::from("  Esc         Cancel"),
+        Line::from("  Tab         Cycle priority       Ctrl+1/2/3  Set priority"),
+        Line::from(""),
+        // ─────────────────────────────────────────────────────────────────
+        Line::from(Span::styled(
+            "─── GENERAL ───",
+            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+        )),
+        Line::from("  ?           Toggle this help     q           Quit"),
+        Line::from("  Esc         Close modal / Cancel"),
         Line::from(""),
         Line::from(Span::styled(
-            "Full Add Mode (a)",
-            Style::default().fg(Color::Yellow),
+            "Tip: Use CLI for batch ops: todoee batch done id1 id2 id3",
+            Style::default().fg(Color::DarkGray).italic(),
         )),
-        Line::from("  Tab         Next field"),
-        Line::from("  Shift+Tab   Previous field"),
-        Line::from("  1/2/3       Set priority (on Priority field)"),
-        Line::from("  Enter       Save (requires title)"),
-        Line::from("  Esc         Cancel"),
     ];
 
     let help = Paragraph::new(help_text)
         .block(
             Block::default()
-                .title(" Help ")
+                .title(" Help (press any key to close) ")
                 .borders(Borders::ALL)
                 .border_style(Style::default().fg(Color::Cyan)),
         )

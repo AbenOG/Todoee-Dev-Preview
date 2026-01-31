@@ -4,10 +4,30 @@ use clap::{Parser, Subcommand};
 mod commands;
 mod tui;
 
-/// todoee - AI-powered todo manager
+/// todoee - A blazing-fast, AI-powered todo manager for developers
+///
+/// Todoee combines the power of a CLI with a beautiful TUI (terminal UI),
+/// featuring git-like commands, smart AI parsing, and productivity tools
+/// like focus timers and insights analytics.
+///
+/// GETTING STARTED:
+///   todoee              Launch interactive TUI (recommended)
+///   todoee add "task"   Add a task from command line
+///   todoee list         List all pending tasks
+///   todoee --help       Show all commands
+///
+/// EXAMPLES:
+///   todoee add "Review PR #123 by tomorrow"    AI parses due date
+///   todoee add "Fix bug" -p 3                  High priority task
+///   todoee done abc1                           Complete task by short ID
+///   todoee undo                                Undo last action
+///   todoee focus                               Start 25-min focus session
 #[derive(Parser)]
 #[command(name = "todoee")]
-#[command(author, version, about, long_about = None)]
+#[command(author, version)]
+#[command(about = "A blazing-fast, AI-powered todo manager for developers")]
+#[command(long_about = None)]
+#[command(after_help = "Run 'todoee' without arguments to launch the interactive TUI.\nRun 'todoee <command> --help' for more info on a specific command.")]
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
@@ -19,9 +39,19 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Add a new todo item
+    // ═══════════════════════════════════════════════════════════════════
+    // CORE COMMANDS
+    // ═══════════════════════════════════════════════════════════════════
+
+    /// Add a new todo (supports natural language with AI)
+    ///
+    /// Examples:
+    ///   todoee add "Buy groceries"
+    ///   todoee add "Review PR by Friday" -p 3
+    ///   todoee add "Call dentist tomorrow at 2pm"
+    #[command(visible_alias = "a")]
     Add {
-        /// Description of the todo (can be natural language)
+        /// Task description (AI parses dates, priorities from natural language)
         #[arg(required = true)]
         description: Vec<String>,
 
@@ -33,18 +63,25 @@ enum Commands {
         #[arg(short, long)]
         category: Option<String>,
 
-        /// Priority (1=low, 2=medium, 3=high)
-        #[arg(short, long)]
+        /// Priority: 1=low, 2=medium, 3=high
+        #[arg(short, long, value_parser = clap::value_parser!(i32).range(1..=3))]
         priority: Option<i32>,
     },
 
-    /// List todos
+    /// List todos with optional filters
+    ///
+    /// Examples:
+    ///   todoee list              Show pending todos
+    ///   todoee list --today      Show today's todos
+    ///   todoee list -c work      Filter by category
+    ///   todoee list --all        Include completed
+    #[command(visible_alias = "ls")]
     List {
         /// Show only today's todos
         #[arg(long)]
         today: bool,
 
-        /// Filter by category
+        /// Filter by category name
         #[arg(short, long)]
         category: Option<String>,
 
@@ -53,21 +90,31 @@ enum Commands {
         all: bool,
     },
 
-    /// Mark a todo as done
+    /// Mark a todo as complete
+    ///
+    /// Use short ID prefix (e.g., "abc1") or full UUID
+    #[command(visible_alias = "d")]
     Done {
-        /// Todo ID (UUID or short ID)
+        /// Todo ID (short prefix like "abc1" or full UUID)
         id: String,
     },
 
-    /// Delete a todo
+    /// Permanently delete a todo
+    ///
+    /// Use short ID prefix (e.g., "abc1") or full UUID
+    #[command(visible_alias = "rm")]
     Delete {
-        /// Todo ID (UUID or short ID)
+        /// Todo ID (short prefix like "abc1" or full UUID)
         id: String,
     },
 
-    /// Edit a todo
+    /// Edit a todo's title, category, or priority
+    ///
+    /// Examples:
+    ///   todoee edit abc1 --title "New title"
+    ///   todoee edit abc1 -p 3 -c work
     Edit {
-        /// Todo ID (UUID or short ID)
+        /// Todo ID (short prefix or full UUID)
         id: String,
 
         /// New title
@@ -78,127 +125,203 @@ enum Commands {
         #[arg(short, long)]
         category: Option<String>,
 
-        /// New priority (1=low, 2=medium, 3=high)
-        #[arg(short, long)]
+        /// New priority: 1=low, 2=medium, 3=high
+        #[arg(short, long, value_parser = clap::value_parser!(i32).range(1..=3))]
         priority: Option<i32>,
     },
 
-    /// Sync todos with the server
-    Sync,
+    // ═══════════════════════════════════════════════════════════════════
+    // GIT-LIKE COMMANDS
+    // ═══════════════════════════════════════════════════════════════════
 
-    /// Configure todoee
-    Config {
-        /// Initialize configuration with interactive setup
-        #[arg(long)]
-        init: bool,
-    },
-
-    /// Undo the last operation
+    /// Undo the last operation (like git)
+    ///
+    /// Reverses add, delete, complete, edit, and stash operations
     Undo,
 
     /// Redo the last undone operation
     Redo,
 
-    /// Show operation history
+    /// Show operation history (like git log)
+    ///
+    /// Examples:
+    ///   todoee log              Show last 10 operations
+    ///   todoee log -n 20        Show last 20 operations
+    ///   todoee log --oneline    Compact format
     Log {
-        /// Number of operations to show (default: 10)
-        #[arg(short = 'n', long)]
+        /// Number of operations to show
+        #[arg(short = 'n', long, default_value = "10")]
         limit: Option<usize>,
-        /// Show one operation per line
+
+        /// Show one operation per line (compact)
         #[arg(long)]
         oneline: bool,
     },
 
-    /// Show recent changes
+    /// Show recent changes (like git diff)
+    ///
+    /// Shows what was created, completed, or deleted recently
     Diff {
-        /// Show changes in the last N hours (default: 24)
-        #[arg(long)]
+        /// Show changes in the last N hours
+        #[arg(long, default_value = "24")]
         hours: Option<i64>,
     },
 
-    /// Show last N todos (most recent)
-    Head {
-        /// Number of todos to show (default: 5)
-        #[arg(default_value = "5")]
-        count: usize,
-
-        /// Include completed todos
-        #[arg(short, long)]
-        all: bool,
-    },
-
-    /// Show oldest N todos
-    Tail {
-        /// Number of todos to show (default: 5)
-        #[arg(default_value = "5")]
-        count: usize,
-
-        /// Include completed todos
-        #[arg(short, long)]
-        all: bool,
-    },
-
-    /// Show next N upcoming todos by due date
-    Upcoming {
-        /// Number of todos to show (default: 5)
-        #[arg(default_value = "5")]
-        count: usize,
-    },
-
-    /// Show all overdue todos
-    Overdue,
-
-    /// Search todos (fuzzy matching)
-    Search {
-        /// Search query
-        query: String,
-    },
-
-    /// Show detailed view of a todo
-    Show {
-        /// Todo ID (or prefix)
-        id: String,
-    },
-
-    /// Stash todos temporarily
+    /// Stash todos temporarily (like git stash)
+    ///
+    /// Subcommands: push, pop, list, clear
+    ///
+    /// Examples:
+    ///   todoee stash push abc1           Stash a todo
+    ///   todoee stash push abc1 -m "WIP"  Stash with message
+    ///   todoee stash pop                 Restore last stashed
+    ///   todoee stash list                Show stash contents
     Stash {
         #[command(subcommand)]
         command: commands::stash::StashCommand,
     },
 
-    /// Batch operations on multiple todos
-    Batch {
-        #[command(subcommand)]
-        command: commands::batch::BatchCommand,
+    // ═══════════════════════════════════════════════════════════════════
+    // VIEW COMMANDS
+    // ═══════════════════════════════════════════════════════════════════
+
+    /// Show N most recently created todos
+    ///
+    /// Example: todoee head 10
+    Head {
+        /// Number of todos to show
+        #[arg(default_value = "5")]
+        count: usize,
+
+        /// Include completed todos
+        #[arg(short, long)]
+        all: bool,
     },
 
-    /// Garbage collect old completed todos and operations
-    Gc {
-        /// Delete items older than N days (default: 30)
+    /// Show N oldest todos
+    ///
+    /// Example: todoee tail 10
+    Tail {
+        /// Number of todos to show
+        #[arg(default_value = "5")]
+        count: usize,
+
+        /// Include completed todos
         #[arg(short, long)]
-        days: Option<i64>,
-        /// Show what would be deleted without deleting
-        #[arg(long)]
-        dry_run: bool,
+        all: bool,
     },
+
+    /// Show upcoming todos sorted by due date
+    ///
+    /// Example: todoee upcoming 10
+    Upcoming {
+        /// Number of todos to show
+        #[arg(default_value = "5")]
+        count: usize,
+    },
+
+    /// Show all overdue todos (past due date)
+    Overdue,
+
+    /// Search todos with fuzzy matching
+    ///
+    /// Searches title and description, ranks by relevance
+    ///
+    /// Example: todoee search "meeting"
+    Search {
+        /// Search query (fuzzy matched)
+        query: String,
+    },
+
+    /// Show detailed view of a single todo
+    ///
+    /// Displays all fields including metadata
+    Show {
+        /// Todo ID (short prefix or full UUID)
+        id: String,
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // PRODUCTIVITY COMMANDS
+    // ═══════════════════════════════════════════════════════════════════
 
     /// Start a focus session (Pomodoro timer)
+    ///
+    /// Interactive timer with keyboard controls:
+    ///   Space: pause/resume, q: quit, Enter: complete early
+    ///
+    /// Examples:
+    ///   todoee focus              Focus on highest priority (25 min)
+    ///   todoee focus abc1         Focus on specific todo
+    ///   todoee focus -d 45        Custom duration (45 min)
     Focus {
-        /// Todo ID to focus on (optional, picks highest priority if not specified)
+        /// Todo ID to focus on (auto-picks if not specified)
         id: Option<String>,
-        /// Duration in minutes (default: 25)
+
+        /// Duration in minutes
         #[arg(short, long, default_value = "25")]
         duration: u32,
     },
 
     /// Suggest what to work on right now
+    ///
+    /// Recommends based on priority, due date, and time of day
     Now,
 
     /// Show productivity insights and analytics
+    ///
+    /// Displays completion rates, streaks, and patterns
+    ///
+    /// Example: todoee insights --days 7
     Insights {
-        /// Number of days to analyze (default: 30)
-        #[arg(short, long)]
+        /// Number of days to analyze
+        #[arg(short, long, default_value = "30")]
         days: Option<i64>,
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // BATCH & MAINTENANCE
+    // ═══════════════════════════════════════════════════════════════════
+
+    /// Batch operations on multiple todos
+    ///
+    /// Subcommands: done, delete, priority
+    ///
+    /// Examples:
+    ///   todoee batch done abc1 def2 ghi3
+    ///   todoee batch delete abc1 def2
+    ///   todoee batch priority 3 abc1 def2
+    Batch {
+        #[command(subcommand)]
+        command: commands::batch::BatchCommand,
+    },
+
+    /// Clean up old completed todos and operations
+    ///
+    /// Examples:
+    ///   todoee gc                 Delete items older than 30 days
+    ///   todoee gc --days 7        Delete items older than 7 days
+    ///   todoee gc --dry-run       Preview what would be deleted
+    Gc {
+        /// Delete items older than N days
+        #[arg(short, long, default_value = "30")]
+        days: Option<i64>,
+
+        /// Preview only, don't actually delete
+        #[arg(long)]
+        dry_run: bool,
+    },
+
+    /// Sync todos with remote server
+    Sync,
+
+    /// Configure todoee settings
+    ///
+    /// Use --init for interactive setup wizard
+    Config {
+        /// Run interactive configuration wizard
+        #[arg(long)]
+        init: bool,
     },
 }
 
