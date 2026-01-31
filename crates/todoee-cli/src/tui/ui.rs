@@ -78,8 +78,8 @@ pub fn render(app: &App, frame: &mut Frame) {
     if app.mode == Mode::Focus
         && let Some(ref state) = app.focus_state
     {
-        let area = centered_rect(50, 40, frame.area());
-        FocusWidget::new(state).render(frame, area);
+        let area = centered_rect(50, 50, frame.area());
+        FocusWidget::new(state, app.animation_frame).render(frame, area);
     }
 
     // Loading overlay (always on top)

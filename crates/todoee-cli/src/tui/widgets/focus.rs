@@ -1,20 +1,25 @@
 use ratatui::{
     layout::{Alignment, Rect},
-    style::{Color, Modifier, Style},
+    style::{Color, Modifier, Style, Stylize},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph},
     Frame,
 };
 
 use crate::tui::app::FocusState;
+use crate::tui::spinner::bracketed_progress;
 
 pub struct FocusWidget<'a> {
     state: &'a FocusState,
+    animation_frame: usize,
 }
 
 impl<'a> FocusWidget<'a> {
-    pub fn new(state: &'a FocusState) -> Self {
-        Self { state }
+    pub fn new(state: &'a FocusState, animation_frame: usize) -> Self {
+        Self {
+            state,
+            animation_frame,
+        }
     }
 
     pub fn render(&self, frame: &mut Frame, area: Rect) {
@@ -28,11 +33,6 @@ impl<'a> FocusWidget<'a> {
             1.0
         };
 
-        let bar_width = 30;
-        let filled = (progress * bar_width as f64) as usize;
-        let empty = bar_width - filled;
-        let bar = format!("[{}{}]", "#".repeat(filled), "-".repeat(empty));
-
         let time_color = if remaining <= 60 {
             Color::Red
         } else if remaining <= 300 {
@@ -41,13 +41,48 @@ impl<'a> FocusWidget<'a> {
             Color::Green
         };
 
-        let status = if self.state.paused { " PAUSED" } else { "" };
+        // Animated header when paused
+        let header = if self.state.paused {
+            let blink = self.animation_frame % 4 < 2;
+            if blink {
+                "⏸ PAUSED"
+            } else {
+                "  PAUSED"
+            }
+        } else {
+            "FOCUS MODE"
+        };
+
+        // Animated timer separator (blinks when not paused)
+        let separator = if self.state.paused {
+            ':'
+        } else {
+            [' ', ':'][self.animation_frame % 2]
+        };
+
+        // Enhanced progress bar
+        let bar = bracketed_progress(progress, 32);
+
+        // Motivational messages based on progress
+        let motivation = match progress {
+            p if p < 0.25 => "Just getting started...",
+            p if p < 0.50 => "Making progress!",
+            p if p < 0.75 => "Over halfway there!",
+            p if p < 0.90 => "Almost done!",
+            _ => "Final stretch!",
+        };
 
         let lines = vec![
             Line::from(""),
             Line::from(Span::styled(
-                "FOCUS MODE",
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                header,
+                Style::default()
+                    .fg(if self.state.paused {
+                        Color::Yellow
+                    } else {
+                        Color::Magenta
+                    })
+                    .add_modifier(Modifier::BOLD),
             )),
             Line::from(""),
             Line::from(Span::styled(
@@ -58,7 +93,7 @@ impl<'a> FocusWidget<'a> {
             )),
             Line::from(""),
             Line::from(Span::styled(
-                format!("{:02}:{:02}{}", mins, secs, status),
+                format!("{:02}{}{:02}", mins, separator, secs),
                 Style::default()
                     .fg(time_color)
                     .add_modifier(Modifier::BOLD),
@@ -67,17 +102,28 @@ impl<'a> FocusWidget<'a> {
             Line::from(Span::styled(bar, Style::default().fg(time_color))),
             Line::from(""),
             Line::from(Span::styled(
+                motivation,
+                Style::default().fg(Color::DarkGray).italic(),
+            )),
+            Line::from(""),
+            Line::from(Span::styled(
                 "Space: pause  q/Esc: cancel  Enter: complete",
                 Style::default().fg(Color::DarkGray),
             )),
         ];
+
+        let border_color = if self.state.paused {
+            Color::Yellow
+        } else {
+            time_color
+        };
 
         let paragraph = Paragraph::new(lines)
             .block(
                 Block::default()
                     .title(" Focus ")
                     .borders(Borders::ALL)
-                    .border_style(Style::default().fg(Color::Red)),
+                    .border_style(Style::default().fg(border_color)),
             )
             .alignment(Alignment::Center);
 
