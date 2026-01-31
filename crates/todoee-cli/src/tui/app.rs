@@ -344,6 +344,8 @@ pub struct App {
     pub pending_priority: Option<Priority>,
     /// Insights data for the insights modal
     pub insights_data: Option<InsightsData>,
+    /// Frame when insights modal was opened
+    pub insights_opened_frame: Option<usize>,
     /// Focus/pomodoro state
     pub focus_state: Option<FocusState>,
     /// Animation frame counter for tick-based animations
@@ -436,6 +438,7 @@ impl App {
             loading_progress: None,
             pending_priority: None,
             insights_data: None,
+            insights_opened_frame: None,
             focus_state: None,
             animation_frame: 0,
             spinner_style: Spinner::default(),

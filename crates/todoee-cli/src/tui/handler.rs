@@ -254,6 +254,7 @@ async fn handle_todos_view(app: &mut App, key: KeyEvent) -> Result<()> {
             let data = app.compute_insights().await?;
             app.clear_loading();
             app.insights_data = Some(data);
+            app.insights_opened_frame = Some(app.animation_frame);
             app.mode = Mode::Insights;
         }
 

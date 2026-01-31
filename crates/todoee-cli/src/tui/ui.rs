@@ -73,7 +73,8 @@ pub fn render(app: &App, frame: &mut Frame) {
         && let Some(ref data) = app.insights_data
     {
         let area = centered_rect(50, 55, frame.area());
-        InsightsWidget::new(data).render(frame, area);
+        let opened = app.insights_opened_frame.unwrap_or(0);
+        InsightsWidget::new(data, app.animation_frame, opened).render(frame, area);
     }
     if app.mode == Mode::Focus
         && let Some(ref state) = app.focus_state
