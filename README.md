@@ -325,12 +325,10 @@ todoee insights      # Review productivity
 
 ```
 todoee/
-├── crates/
-│   ├── todoee-cli/      # CLI + TUI application
-│   ├── todoee-core/     # Business logic & database
-│   └── todoee-daemon/   # Background service (future)
-└── docs/
-    └── plans/           # Development plans
+└── crates/
+    ├── todoee-cli/      # CLI + TUI application
+    ├── todoee-core/     # Business logic & database
+    └── todoee-daemon/   # Background service (future)
 ```
 
 ## Development Status
