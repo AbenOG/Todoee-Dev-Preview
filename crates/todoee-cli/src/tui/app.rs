@@ -737,11 +737,28 @@ impl App {
             let id = cat.id;
 
             self.set_loading("Deleting category...");
+
+            // Clear category from all todos first to prevent orphaned references
+            let affected = self.db.clear_category_from_todos(id).await?;
+
+            // Clear filter if we're deleting the filtered category
+            if self.filter.category.as_ref() == Some(&name) {
+                self.filter.category = None;
+            }
+
             self.db.delete_category(id).await?;
             self.clear_loading();
 
-            self.status_message = Some(format!("Deleted category: {}", name));
+            let msg = if affected > 0 {
+                format!("Deleted category '{}' ({} todos uncategorized)", name, affected)
+            } else {
+                format!("Deleted category: {}", name)
+            };
+            self.status_message = Some(msg);
+
             self.refresh_categories().await?;
+            self.refresh_todos().await?; // Refresh todos to update their display
+
             if self.categories.is_empty() {
                 self.category_selected = 0;
             } else if self.category_selected >= self.categories.len() {

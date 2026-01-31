@@ -573,6 +573,18 @@ impl LocalDb {
         Ok(())
     }
 
+    /// Clear category_id for all todos that belong to a category.
+    /// Call this before deleting a category to prevent orphaned references.
+    pub async fn clear_category_from_todos(&self, category_id: Uuid) -> Result<u64> {
+        let result = sqlx::query("UPDATE todos SET category_id = NULL WHERE category_id = ?")
+            .bind(category_id.to_string())
+            .execute(&self.pool)
+            .await
+            .context("Failed to clear category from todos")?;
+
+        Ok(result.rows_affected())
+    }
+
     // ==================== Operation CRUD Operations ====================
 
     /// Record an operation in the history.
