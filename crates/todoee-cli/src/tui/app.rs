@@ -314,6 +314,8 @@ pub struct App {
     pub filter: Filter,
     /// Status message to display
     pub status_message: Option<String>,
+    /// Frame when status message was set (for animation)
+    pub status_set_frame: Option<usize>,
     /// Database connection
     pub db: LocalDb,
     /// Configuration
@@ -415,6 +417,7 @@ impl App {
             input: Input::default(),
             filter: Filter::default(),
             status_message: None,
+            status_set_frame: None,
             db,
             config,
             edit_state: None,
@@ -761,6 +764,13 @@ impl App {
     /// Check if AI is configured
     pub fn has_ai(&self) -> bool {
         self.config.ai.model.is_some()
+    }
+
+    /// Set status message with animation tracking
+    #[allow(dead_code)]
+    pub fn set_status(&mut self, message: String) {
+        self.status_message = Some(message);
+        self.status_set_frame = Some(self.animation_frame);
     }
 
     /// Set loading state with a message

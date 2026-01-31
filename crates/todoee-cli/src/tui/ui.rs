@@ -351,6 +351,43 @@ fn render_tasks(app: &App, frame: &mut Frame, area: Rect) {
 
 fn render_status(app: &App, frame: &mut Frame, area: Rect) {
     let status_text = app.status_message.as_deref().unwrap_or("");
+
+    // Calculate age of status message in frames
+    let age = app
+        .status_set_frame
+        .map(|set_frame| app.animation_frame.wrapping_sub(set_frame))
+        .unwrap_or(0);
+
+    // Icon animation: pulse for first few frames
+    let icon = if status_text.starts_with('✓') {
+        if age < 4 {
+            ['✓', '✔', '✓', '✔'][age % 4]
+        } else {
+            '✓'
+        }
+    } else if status_text.starts_with('✗') {
+        if age < 4 {
+            ['✗', '✘', '✗', '✘'][age % 4]
+        } else {
+            '✗'
+        }
+    } else {
+        ' '
+    };
+
+    // Replace first char with animated icon if it's a status icon
+    let display_text = if !status_text.is_empty()
+        && (status_text.starts_with('✓') || status_text.starts_with('✗'))
+    {
+        format!(
+            "{}{}",
+            icon,
+            &status_text[status_text.chars().next().unwrap().len_utf8()..]
+        )
+    } else {
+        status_text.to_string()
+    };
+
     let status_style = if status_text.starts_with('✓') {
         Style::default().fg(Color::Green)
     } else if status_text.starts_with('✗') {
@@ -359,7 +396,7 @@ fn render_status(app: &App, frame: &mut Frame, area: Rect) {
         Style::default().fg(Color::Yellow)
     };
 
-    let status = Paragraph::new(Span::styled(status_text, status_style)).block(
+    let status = Paragraph::new(Span::styled(&display_text, status_style)).block(
         Block::default()
             .borders(Borders::ALL)
             .border_style(Style::default().fg(Color::DarkGray)),
