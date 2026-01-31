@@ -9,8 +9,11 @@ Combines the power of a CLI with a beautiful TUI, featuring git-like commands, o
 [![Rust](https://img.shields.io/badge/rust-1.75+-orange.svg)](https://www.rust-lang.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Status](https://img.shields.io/badge/status-dev%20preview-yellow.svg)](#development-status)
 
 [Features](#features) · [Installation](#installation) · [Quick Start](#quick-start) · [Usage](#usage) · [Configuration](#configuration)
+
+> **Note:** This is a development preview. Some features are still being implemented. See [Development Status](#development-status) for details.
 
 </div>
 
@@ -330,9 +333,52 @@ todoee/
     └── plans/           # Development plans
 ```
 
+## Development Status
+
+This is a **development preview**. The core functionality is working, but some features are still in progress.
+
+### Fully Implemented
+
+- Interactive TUI with vim-style navigation
+- CLI commands (add, list, done, delete, edit, search)
+- Git-like operations (undo, redo, stash, log, diff)
+- Focus mode with Pomodoro timer
+- Productivity insights
+- Fuzzy search
+- Categories and priorities
+- UI animations and loading indicators
+- Local SQLite database
+
+### In Development
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Cloud Sync | Planned | Sync across devices via Neon Postgres |
+| Daemon Service | Stub | Background service for reminders |
+| Reminders/Notifications | Partial | Data model ready, notifications not yet implemented |
+| AI Parsing | Beta | Works but requires external API key |
+| Config Wizard | Partial | `--init` flag not fully implemented |
+| Import/Export | Planned | Backup and restore functionality |
+
+### Known Limitations
+
+- **Sync command** - Currently a no-op, cloud sync not yet available
+- **Reminders** - Can be set but won't trigger notifications yet
+- **Daemon** - Placeholder only, not functional
+- **Multi-device** - Single-device only until cloud sync is complete
+
+### Roadmap
+
+1. **v0.2** - Cloud sync with Neon Postgres
+2. **v0.3** - Desktop notifications and reminders
+3. **v0.4** - Background daemon service
+4. **v1.0** - Stable release with full feature set
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit issues and pull requests.
+
+This project is in active development - check the [Issues](https://github.com/AbenOG/Todoee-Dev-Preview/issues) for ways to help.
 
 ## License
 
