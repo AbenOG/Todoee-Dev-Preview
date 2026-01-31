@@ -1,18 +1,18 @@
 # Todoee
 
-A blazing-fast, AI-powered todo manager for developers. Combines the power of a CLI with a beautiful TUI (terminal UI), featuring git-like commands, smart AI parsing, and productivity tools.
+A blazing-fast, offline-first todo manager for developers. Combines the power of a CLI with a beautiful TUI (terminal UI), featuring git-like commands, optional AI parsing, and productivity tools.
 
 ## Features
 
+- **Offline-First** - Works without internet, no external dependencies required
 - **Interactive TUI** - Beautiful terminal interface with vim-style navigation
-- **AI-Powered** - Natural language task creation ("Review PR by Friday")
+- **Optional AI Parsing** - Natural language task creation with `--ai` flag
 - **Git-Like Commands** - Undo, redo, stash, log, diff
 - **Focus Mode** - Built-in Pomodoro timer
 - **Smart Recommendations** - "Now" command suggests what to work on
 - **Productivity Insights** - Track completion rates and patterns
 - **Fuzzy Search** - Find tasks quickly
 - **Categories & Priorities** - Organize your work
-- **Offline-First** - Works without internet, syncs when available
 
 ## Quick Start
 
@@ -78,7 +78,7 @@ Launch the TUI by running `todoee` without arguments:
 |-----|--------|
 | `j` / `k` | Navigate up/down |
 | `a` | Add task (full editor) |
-| `A` | Quick add (AI-powered) |
+| `A` | Quick add (offline, Shift+Enter for AI) |
 | `d` / `Enter` | Mark as done |
 | `x` | Delete task |
 | `e` | Edit task |
@@ -95,17 +95,14 @@ Launch the TUI by running `todoee` without arguments:
 #### Adding Tasks
 
 ```bash
-# Simple task
+# Simple task (default, offline)
 todoee add "Buy groceries"
 
-# AI parses natural language (dates, priorities)
-todoee add "Review PR by Friday high priority"
-
-# Manual options
+# With priority and category
 todoee add "Fix bug" --priority 3 --category work
 
-# Skip AI parsing
-todoee add "Meeting at 2pm" --no-ai
+# Enable AI parsing (requires API key)
+todoee add "Review PR by Friday high priority" --ai
 ```
 
 #### Viewing Tasks
@@ -253,9 +250,9 @@ Controls:
 - `Enter` - Complete early
 - `q` / `Esc` - Cancel
 
-## AI Configuration
+## AI Configuration (Optional)
 
-To enable AI-powered task parsing, add to `~/.config/todoee/config.toml`:
+AI parsing is **opt-in** and not required for normal operation. To enable AI-powered task parsing, add to `~/.config/todoee/config.toml`:
 
 ```toml
 [ai]
@@ -303,7 +300,7 @@ todoee insights      # Review productivity
 ### 5. Keyboard-Only Workflow
 The TUI is designed for keyboard efficiency:
 1. `todoee` to open
-2. `A` to quick-add with AI
+2. `A` to quick-add (Shift+Enter for AI)
 3. `n` to jump to recommended task
 4. `f` to start focus
 5. `d` when done
@@ -313,7 +310,7 @@ The TUI is designed for keyboard efficiency:
 
 ### "AI parsing failed"
 - Check your API key in config
-- Use `--no-ai` flag to skip AI
+- Remove `--ai` flag to use offline mode
 
 ### "Todo not found"
 - Use `todoee list --all` to see completed todos
