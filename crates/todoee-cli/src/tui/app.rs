@@ -3,6 +3,8 @@ use chrono::{Duration, Local, NaiveDate, NaiveDateTime, TimeZone, Utc};
 use todoee_core::{Category, Config, EntityType, LocalDb, Operation, OperationType, Priority, Todo};
 use tui_input::Input;
 
+use super::spinner::Spinner;
+
 /// Main view/tab of the application
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum View {
@@ -301,6 +303,9 @@ pub struct App {
     pub focus_state: Option<FocusState>,
     /// Animation frame counter for tick-based animations
     pub animation_frame: usize,
+    /// Current spinner style for loading animations
+    #[allow(dead_code)]
+    pub spinner_style: Spinner,
 }
 
 /// Calculate fuzzy match score (higher = better match)
@@ -384,6 +389,7 @@ impl App {
             insights_data: None,
             focus_state: None,
             animation_frame: 0,
+            spinner_style: Spinner::default(),
         };
 
         app.refresh_todos().await?;
