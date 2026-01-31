@@ -56,9 +56,9 @@ enum Commands {
         #[arg(required = true)]
         description: Vec<String>,
 
-        /// Skip AI parsing and use description as-is
+        /// Enable AI parsing for natural language (requires API key)
         #[arg(long)]
-        no_ai: bool,
+        ai: bool,
 
         /// Category for the todo
         #[arg(short, long)]
@@ -352,11 +352,11 @@ async fn main() -> Result<()> {
     match cli.command.unwrap() {
         Commands::Add {
             description,
-            no_ai,
+            ai,
             category,
             priority,
         } => {
-            commands::add(description, no_ai, category, priority).await?;
+            commands::add(description, ai, category, priority).await?;
         }
         Commands::List {
             today,

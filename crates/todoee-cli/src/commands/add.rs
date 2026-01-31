@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 pub async fn run(
     description: Vec<String>,
-    no_ai: bool,
+    use_ai: bool,
     category: Option<String>,
     priority: Option<i32>,
 ) -> Result<()> {
@@ -34,8 +34,8 @@ pub async fn run(
     let db = LocalDb::new(&db_path).await?;
     db.run_migrations().await?;
 
-    // Create todo based on whether AI is disabled or no model is configured
-    let mut todo = if no_ai || config.ai.model.is_none() {
+    // Create todo based on whether AI is enabled and a model is configured
+    let mut todo = if !use_ai || config.ai.model.is_none() {
         // Manual mode: create task directly from input
         Todo::new(description.clone(), None)
     } else {
