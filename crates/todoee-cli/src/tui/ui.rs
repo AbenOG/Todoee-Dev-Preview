@@ -267,6 +267,42 @@ fn render_input(app: &App, frame: &mut Frame, area: Rect) {
 fn render_tasks(app: &App, frame: &mut Frame, area: Rect) {
     let now = Utc::now();
 
+    if app.todos.is_empty() {
+        // Animated empty state
+        let messages = [
+            "No tasks yet... Press 'a' to add one!",
+            "All clear! Press 'a' to add a task.",
+            "Empty list. Time to plan ahead!",
+            "No todos here. Press 'a' to get started.",
+        ];
+        let message = messages[(app.animation_frame / 8) % messages.len()];
+
+        let icons = ['*', '+', '*', '+'];
+        let icon = icons[(app.animation_frame / 4) % icons.len()];
+
+        let content = vec![
+            Line::from(""),
+            Line::from(""),
+            Line::from(Span::styled(
+                format!("  {}  {}", icon, message),
+                Style::default().fg(Color::DarkGray).italic(),
+            )),
+            Line::from(""),
+        ];
+
+        let empty = Paragraph::new(content)
+            .block(
+                Block::default()
+                    .title(" Tasks (0) ")
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(Color::DarkGray)),
+            )
+            .alignment(Alignment::Center);
+
+        frame.render_widget(empty, area);
+        return;
+    }
+
     let items: Vec<ListItem> = app
         .todos
         .iter()
