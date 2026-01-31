@@ -545,6 +545,16 @@ impl App {
 
     /// Delete selected todo
     pub async fn delete_selected(&mut self) -> Result<()> {
+        // Prevent deleting a todo that's currently being focused on
+        if let Some(ref focus) = self.focus_state {
+            if let Some(todo) = self.todos.get(self.selected) {
+                if todo.id == focus.todo_id {
+                    self.status_message = Some("Cannot delete: todo is in focus mode".to_string());
+                    return Ok(());
+                }
+            }
+        }
+
         // Extract necessary data before borrowing self mutably
         let todo_info = self
             .todos
@@ -1157,15 +1167,21 @@ impl App {
 
     /// Complete focus session and return to normal mode
     pub fn complete_focus(&mut self) {
-        if let Some(ref state) = self.focus_state {
-            let todo_id = state.todo_id;
-            self.focus_state = None;
-            self.mode = Mode::Normal;
-            self.status_message = Some("Focus complete! Press 'd' to mark done.".to_string());
-            // Select the focused todo
-            if let Some(idx) = self.todos.iter().position(|t| t.id == todo_id) {
-                self.selected = idx;
+        if let Some(state) = self.focus_state.take() {
+            // Check if the focused todo still exists
+            let todo_exists = self.todos.iter().any(|t| t.id == state.todo_id);
+
+            if todo_exists {
+                self.status_message = Some("Focus complete! Press 'd' to mark done.".to_string());
+                // Select the focused todo
+                if let Some(idx) = self.todos.iter().position(|t| t.id == state.todo_id) {
+                    self.selected = idx;
+                }
+            } else {
+                self.status_message = Some("Focus complete! (Todo was deleted)".to_string());
             }
+
+            self.mode = Mode::Normal;
         }
     }
 
