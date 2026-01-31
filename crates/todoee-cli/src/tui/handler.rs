@@ -55,15 +55,27 @@ async fn handle_normal_mode(app: &mut App, key: KeyEvent) -> Result<()> {
     // View switching always available
     match key.code {
         KeyCode::Char('1') => {
-            app.current_view = View::Todos;
+            if app.current_view != View::Todos {
+                app.previous_view = Some(app.current_view);
+                app.view_changed_frame = Some(app.animation_frame);
+                app.current_view = View::Todos;
+            }
             return Ok(());
         }
         KeyCode::Char('2') => {
-            app.current_view = View::Categories;
+            if app.current_view != View::Categories {
+                app.previous_view = Some(app.current_view);
+                app.view_changed_frame = Some(app.animation_frame);
+                app.current_view = View::Categories;
+            }
             return Ok(());
         }
         KeyCode::Char('3') => {
-            app.current_view = View::Settings;
+            if app.current_view != View::Settings {
+                app.previous_view = Some(app.current_view);
+                app.view_changed_frame = Some(app.animation_frame);
+                app.current_view = View::Settings;
+            }
             return Ok(());
         }
         KeyCode::Char('q') | KeyCode::Esc => {

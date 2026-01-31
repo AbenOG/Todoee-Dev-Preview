@@ -89,6 +89,13 @@ pub fn render(app: &App, frame: &mut Frame) {
 }
 
 fn render_tabs(app: &App, frame: &mut Frame, area: Rect) {
+    // Calculate transition animation
+    let transition_frame = app
+        .view_changed_frame
+        .map(|f| app.animation_frame.wrapping_sub(f))
+        .unwrap_or(10);
+    let is_transitioning = transition_frame < 4;
+
     let tabs = [
         ("1: Todos", View::Todos),
         ("2: Categories", View::Categories),
@@ -98,10 +105,16 @@ fn render_tabs(app: &App, frame: &mut Frame, area: Rect) {
     let mut spans: Vec<Span> = tabs
         .iter()
         .flat_map(|(label, view)| {
-            let style = if app.current_view == *view {
+            let is_active = app.current_view == *view;
+            let was_active = app.previous_view == Some(*view);
+
+            let style = if is_active {
                 Style::default()
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD | Modifier::UNDERLINED)
+            } else if was_active && is_transitioning {
+                // Fading out previous tab
+                Style::default().fg(Color::Gray)
             } else {
                 Style::default().fg(Color::DarkGray)
             };

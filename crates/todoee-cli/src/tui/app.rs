@@ -326,6 +326,10 @@ pub struct App {
     pub add_state: Option<AddState>,
     /// Current view/tab
     pub current_view: View,
+    /// Previous view for tab transition animation
+    pub previous_view: Option<View>,
+    /// Frame when view changed
+    pub view_changed_frame: Option<usize>,
     /// Selected category index
     pub category_selected: usize,
     /// Current settings section
@@ -423,6 +427,8 @@ impl App {
             edit_state: None,
             add_state: None,
             current_view: View::default(),
+            previous_view: None,
+            view_changed_frame: None,
             category_selected: 0,
             settings_section: SettingsSection::default(),
             is_loading: false,
