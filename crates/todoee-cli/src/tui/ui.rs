@@ -515,19 +515,19 @@ fn render_help_modal(frame: &mut Frame) {
 }
 
 fn render_loading_overlay(app: &App, frame: &mut Frame) {
-    let area = centered_rect(45, 20, frame.area());
+    use super::spinner::bracketed_progress;
 
-    // Use frame-based animation from app state
+    let area = centered_rect(50, 25, frame.area());
+
     let spinner_char = app.spinner_style.frame(app.animation_frame);
-
     let message = app.loading_message.as_deref().unwrap_or("Loading...");
 
-    // Animated dots after message
+    // Animated dots
     let dots_count = app.animation_frame % 4;
     let dots = ".".repeat(dots_count);
     let dots_padding = " ".repeat(3 - dots_count);
 
-    let content = vec![
+    let mut content = vec![
         Line::from(""),
         Line::from(Span::styled(
             format!("  {}  {}{}{}", spinner_char, message, dots, dots_padding),
@@ -537,6 +537,34 @@ fn render_loading_overlay(app: &App, frame: &mut Frame) {
         )),
         Line::from(""),
     ];
+
+    // Add progress bar if available
+    if let Some(ref progress) = app.loading_progress {
+        let bar = bracketed_progress(progress.percentage(), 30);
+        let percentage = (progress.percentage() * 100.0) as u8;
+
+        content.push(Line::from(Span::styled(
+            format!("  {} {}%", bar, percentage),
+            Style::default().fg(Color::Green),
+        )));
+
+        // Show step name if available
+        if let Some(ref step) = progress.step_name {
+            content.push(Line::from(""));
+            content.push(Line::from(Span::styled(
+                format!("  {}", step),
+                Style::default().fg(Color::DarkGray),
+            )));
+        }
+
+        // Show progress count
+        content.push(Line::from(Span::styled(
+            format!("  ({}/{})", progress.current, progress.total),
+            Style::default().fg(Color::DarkGray),
+        )));
+    }
+
+    content.push(Line::from(""));
 
     let loading = Paragraph::new(content)
         .block(
