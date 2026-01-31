@@ -11,3 +11,4 @@ pub use models::*;
 pub use config::{Config, AiConfig, DatabaseConfig, NotificationConfig, DisplayConfig};
 pub use db::{LocalDb, RemoteDb};
 pub use ai::{AiClient, ParsedTask};
+pub use sync::{SyncService, SyncResult};

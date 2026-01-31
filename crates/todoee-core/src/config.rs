@@ -198,10 +198,10 @@ impl Config {
             .with_context(|| format!("Environment variable {} not set", self.ai.api_key_env))
     }
 
-    /// Get the database URL from the environment variable
-    pub fn get_database_url(&self) -> Result<String> {
-        env::var(&self.database.url_env)
-            .with_context(|| format!("Environment variable {} not set", self.database.url_env))
+    /// Get the database URL from the environment variable.
+    /// Returns None if the environment variable is not set.
+    pub fn get_database_url(&self) -> Option<String> {
+        env::var(&self.database.url_env).ok()
     }
 }
 
@@ -359,12 +359,14 @@ advance_minutes = 60
 
     #[test]
     fn test_get_database_url_missing() {
-        let config = Config::default();
+        // Use a unique env var name to avoid test conflicts
+        let mut config = Config::default();
+        config.database.url_env = "TEST_DB_URL_MISSING".to_string();
         // Clear the env var to ensure the test is reliable
         // SAFETY: This is a single-threaded test
-        unsafe { env::remove_var("NEON_DATABASE_URL") };
+        unsafe { env::remove_var("TEST_DB_URL_MISSING") };
         let result = config.get_database_url();
-        assert!(result.is_err());
+        assert!(result.is_none());
     }
 
     #[test]
@@ -381,13 +383,15 @@ advance_minutes = 60
 
     #[test]
     fn test_get_database_url_set() {
-        let config = Config::default();
+        // Use a unique env var name to avoid test conflicts
+        let mut config = Config::default();
+        config.database.url_env = "TEST_DB_URL_SET".to_string();
         // SAFETY: This is a single-threaded test
-        unsafe { env::set_var("NEON_DATABASE_URL", "postgres://localhost/test") };
+        unsafe { env::set_var("TEST_DB_URL_SET", "postgres://localhost/test") };
         let result = config.get_database_url();
-        assert!(result.is_ok());
+        assert!(result.is_some());
         assert_eq!(result.unwrap(), "postgres://localhost/test");
         // SAFETY: This is a single-threaded test
-        unsafe { env::remove_var("NEON_DATABASE_URL") };
+        unsafe { env::remove_var("TEST_DB_URL_SET") };
     }
 }
