@@ -208,6 +208,38 @@ todoee focus abc1 -d 45  # Custom duration
 todoee insights          # Weekly stats
 ```
 
+#### Import/Export
+
+```bash
+todoee export                    # Export to JSON (default)
+todoee export -f csv             # Export to CSV
+todoee export -o backup.json     # Specify output file
+todoee import backup.json        # Import from file
+todoee import backup.json -m replace  # Overwrite existing
+```
+
+#### Cloud Sync
+
+```bash
+# Setup
+export NEON_DATABASE_URL="postgres://user:pass@host/db"
+
+# Sync
+todoee sync                      # Sync with cloud
+```
+
+#### Daemon & Reminders
+
+```bash
+todoee daemon start              # Start background daemon
+todoee daemon stop               # Stop daemon
+todoee daemon status             # Check daemon status
+
+# Add task with reminder
+todoee add "Meeting" -r "in 30 minutes"
+todoee add "Call mom" -r "tomorrow"
+```
+
 ## Focus Mode
 
 Built-in Pomodoro timer with progress tracking and motivational messages:
@@ -328,7 +360,7 @@ todoee/
 └── crates/
     ├── todoee-cli/      # CLI + TUI application
     ├── todoee-core/     # Business logic & database
-    └── todoee-daemon/   # Background service (future)
+    └── todoee-daemon/   # Background service for reminders
 ```
 
 ## Development Status
@@ -346,30 +378,28 @@ This is a **development preview**. The core functionality is working, but some f
 - Categories and priorities
 - UI animations and loading indicators
 - Local SQLite database
+- Import/Export (JSON and CSV)
+- Cloud Sync (Neon Postgres)
+- Daemon Service (background reminders)
+- Notifications (desktop alerts)
 
 ### In Development
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Cloud Sync | Planned | Sync across devices via Neon Postgres |
-| Daemon Service | Stub | Background service for reminders |
-| Reminders/Notifications | Partial | Data model ready, notifications not yet implemented |
 | AI Parsing | Beta | Works but requires external API key |
 | Config Wizard | Partial | `--init` flag not fully implemented |
-| Import/Export | Planned | Backup and restore functionality |
 
 ### Known Limitations
 
-- **Sync command** - Currently a no-op, cloud sync not yet available
-- **Reminders** - Can be set but won't trigger notifications yet
-- **Daemon** - Placeholder only, not functional
-- **Multi-device** - Single-device only until cloud sync is complete
+- **AI Parsing** - Requires external API key and network connection
+- **Config Wizard** - `--init` flag not fully implemented
 
 ### Roadmap
 
-1. **v0.2** - Cloud sync with Neon Postgres
-2. **v0.3** - Desktop notifications and reminders
-3. **v0.4** - Background daemon service
+1. **v0.2** - Cloud sync with Neon Postgres (completed)
+2. **v0.3** - Desktop notifications and reminders (completed)
+3. **v0.4** - Background daemon service (completed)
 4. **v1.0** - Stable release with full feature set
 
 ## Contributing
