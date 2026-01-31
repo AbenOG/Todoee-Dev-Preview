@@ -1,5 +1,9 @@
 /target
 /docs
+/.agents
+/.claude
+/.github/skills
+codebase_analysis.md
 .env
 *.db
 *.db-journal
