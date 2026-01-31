@@ -60,6 +60,7 @@ enum Commands {
     ///   todoee add "Buy groceries"
     ///   todoee add "Fix bug" -p 3 -c work
     ///   todoee add "Review PR by Friday" --ai
+    ///   todoee add "Meeting" -r "in 30 minutes"
     #[command(visible_alias = "a")]
     Add {
         /// Task description (AI parses dates, priorities from natural language)
@@ -77,6 +78,10 @@ enum Commands {
         /// Priority: 1=low, 2=medium, 3=high
         #[arg(short, long, value_parser = clap::value_parser!(i32).range(1..=3))]
         priority: Option<i32>,
+
+        /// Set a reminder (e.g., "in 30 minutes", "in 1 hour", "tomorrow")
+        #[arg(short = 'r', long)]
+        reminder: Option<String>,
     },
 
     /// List todos with optional filters
@@ -418,8 +423,9 @@ async fn main() -> Result<()> {
             ai,
             category,
             priority,
+            reminder,
         } => {
-            commands::add(description, ai, category, priority).await?;
+            commands::add(description, ai, category, priority, reminder).await?;
         }
         Commands::List {
             today,

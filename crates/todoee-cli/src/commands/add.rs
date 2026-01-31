@@ -10,6 +10,7 @@ pub async fn run(
     use_ai: bool,
     category: Option<String>,
     priority: Option<i32>,
+    reminder: Option<String>,
 ) -> Result<()> {
     // Join description parts into a single string
     let description = description.join(" ");
@@ -65,6 +66,14 @@ pub async fn run(
         };
     }
 
+    // Set reminder if specified
+    if let Some(reminder_str) = &reminder {
+        todo.reminder_at = parse_reminder_time(reminder_str);
+        if todo.reminder_at.is_none() {
+            println!("\u{26A0}  Could not parse reminder time: {}", reminder_str);
+        }
+    }
+
     // Save todo to database
     db.create_todo(&todo).await?;
 
@@ -91,6 +100,11 @@ pub async fn run(
     // Print due date if any
     if let Some(due) = todo.due_date {
         println!("  Due: {}", due.format("%Y-%m-%d %H:%M"));
+    }
+
+    // Print reminder if any
+    if let Some(reminder) = todo.reminder_at {
+        println!("  Reminder: {}", reminder.format("%Y-%m-%d %H:%M"));
     }
 
     // Print priority
@@ -154,4 +168,32 @@ async fn get_or_create_category(db: &LocalDb, name: &str, user_id: Option<Uuid>)
 async fn find_category_name(db: &LocalDb, id: Uuid) -> Result<Option<String>> {
     let categories = db.list_categories().await?;
     Ok(categories.into_iter().find(|c| c.id == id).map(|c| c.name))
+}
+
+/// Parse reminder time from natural language string
+fn parse_reminder_time(s: &str) -> Option<chrono::DateTime<chrono::Utc>> {
+    let now = chrono::Utc::now();
+    let s = s.to_lowercase();
+
+    // Handle "in X minutes/hours"
+    if let Some(rest) = s.strip_prefix("in ") {
+        if let Some(minutes) = rest.strip_suffix(" minutes").or_else(|| rest.strip_suffix(" minute"))
+            && let Ok(m) = minutes.trim().parse::<i64>()
+        {
+            return Some(now + chrono::Duration::minutes(m));
+        }
+        if let Some(hours) = rest.strip_suffix(" hours").or_else(|| rest.strip_suffix(" hour"))
+            && let Ok(h) = hours.trim().parse::<i64>()
+        {
+            return Some(now + chrono::Duration::hours(h));
+        }
+    }
+
+    // Handle "tomorrow"
+    if s.contains("tomorrow") {
+        let tomorrow = now + chrono::Duration::days(1);
+        return Some(tomorrow.date_naive().and_hms_opt(9, 0, 0)?.and_utc());
+    }
+
+    None
 }
