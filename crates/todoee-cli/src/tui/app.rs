@@ -5,6 +5,43 @@ use tui_input::Input;
 
 use super::spinner::Spinner;
 
+/// Progress state for multi-step loading operations
+#[derive(Debug, Clone, Default)]
+pub struct LoadingProgress {
+    pub current: usize,
+    pub total: usize,
+    pub step_name: Option<String>,
+}
+
+impl LoadingProgress {
+    pub fn new(total: usize) -> Self {
+        Self {
+            current: 0,
+            total,
+            step_name: None,
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn percentage(&self) -> f64 {
+        if self.total == 0 {
+            0.0
+        } else {
+            self.current as f64 / self.total as f64
+        }
+    }
+
+    pub fn advance(&mut self, step_name: Option<&str>) {
+        self.current = (self.current + 1).min(self.total);
+        self.step_name = step_name.map(|s| s.to_string());
+    }
+
+    #[allow(dead_code)]
+    pub fn is_complete(&self) -> bool {
+        self.current >= self.total
+    }
+}
+
 /// Main view/tab of the application
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum View {
@@ -295,6 +332,8 @@ pub struct App {
     pub is_loading: bool,
     /// Loading message to display
     pub loading_message: Option<String>,
+    /// Progress for multi-step loading operations
+    pub loading_progress: Option<LoadingProgress>,
     /// Priority to apply when adding a task
     pub pending_priority: Option<Priority>,
     /// Insights data for the insights modal
@@ -385,6 +424,7 @@ impl App {
             settings_section: SettingsSection::default(),
             is_loading: false,
             loading_message: None,
+            loading_progress: None,
             pending_priority: None,
             insights_data: None,
             focus_state: None,
@@ -733,6 +773,23 @@ impl App {
     pub fn clear_loading(&mut self) {
         self.is_loading = false;
         self.loading_message = None;
+        self.loading_progress = None;
+    }
+
+    /// Set loading with progress tracking
+    #[allow(dead_code)]
+    pub fn set_loading_with_progress(&mut self, message: &str, total_steps: usize) {
+        self.is_loading = true;
+        self.loading_message = Some(message.to_string());
+        self.loading_progress = Some(LoadingProgress::new(total_steps));
+    }
+
+    /// Advance loading progress
+    #[allow(dead_code)]
+    pub fn advance_loading(&mut self, step_name: Option<&str>) {
+        if let Some(ref mut progress) = self.loading_progress {
+            progress.advance(step_name);
+        }
     }
 
     /// Add a new category
@@ -1210,5 +1267,44 @@ impl App {
         self.focus_state = None;
         self.mode = Mode::Normal;
         self.status_message = Some("Focus cancelled".to_string());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_loading_progress_percentage() {
+        let progress = LoadingProgress {
+            current: 2,
+            total: 5,
+            step_name: Some("Processing".to_string()),
+        };
+        assert!((progress.percentage() - 0.4).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_loading_progress_zero_total() {
+        let progress = LoadingProgress {
+            current: 0,
+            total: 0,
+            step_name: None,
+        };
+        assert!((progress.percentage() - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_loading_progress_advance() {
+        let mut progress = LoadingProgress::new(3);
+        assert_eq!(progress.current, 0);
+
+        progress.advance(Some("Step 1"));
+        assert_eq!(progress.current, 1);
+        assert_eq!(progress.step_name, Some("Step 1".to_string()));
+
+        progress.advance(None);
+        assert_eq!(progress.current, 2);
+        assert_eq!(progress.step_name, None);
     }
 }
