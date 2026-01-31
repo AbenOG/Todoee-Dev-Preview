@@ -189,7 +189,8 @@ fn render_category_header(app: &App, frame: &mut Frame, area: Rect) {
 }
 
 fn render_categories(app: &App, frame: &mut Frame, area: Rect) {
-    CategoryListWidget::new(&app.categories, app.category_selected).render(frame, area);
+    CategoryListWidget::new(&app.categories, app.category_selected, app.animation_frame)
+        .render(frame, area);
 }
 
 fn render_settings_header(_app: &App, frame: &mut Frame, area: Rect) {

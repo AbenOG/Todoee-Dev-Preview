@@ -1,7 +1,7 @@
 use ratatui::{
     Frame,
     layout::Rect,
-    style::{Color, Style},
+    style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem},
 };
@@ -10,13 +10,15 @@ use todoee_core::Category;
 pub struct CategoryListWidget<'a> {
     categories: &'a [Category],
     selected: usize,
+    animation_frame: usize,
 }
 
 impl<'a> CategoryListWidget<'a> {
-    pub fn new(categories: &'a [Category], selected: usize) -> Self {
+    pub fn new(categories: &'a [Category], selected: usize, animation_frame: usize) -> Self {
         Self {
             categories,
             selected,
+            animation_frame,
         }
     }
 
@@ -27,7 +29,14 @@ impl<'a> CategoryListWidget<'a> {
             .enumerate()
             .map(|(i, cat)| {
                 let is_selected = i == self.selected;
-                let selector = if is_selected { "▸ " } else { "  " };
+
+                // Animated cursor
+                let selector = if is_selected {
+                    let cursors = ['▸', '▹', '▸', '▹'];
+                    format!("{} ", cursors[self.animation_frame % cursors.len()])
+                } else {
+                    "  ".to_string()
+                };
 
                 let color = cat
                     .color
@@ -42,7 +51,14 @@ impl<'a> CategoryListWidget<'a> {
                 };
 
                 let content = Line::from(vec![
-                    Span::styled(selector, Style::default().fg(Color::Cyan)),
+                    Span::styled(
+                        selector,
+                        if is_selected {
+                            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)
+                        } else {
+                            Style::default()
+                        },
+                    ),
                     Span::styled("● ", Style::default().fg(color)),
                     Span::raw(&cat.name),
                     ai_badge,
