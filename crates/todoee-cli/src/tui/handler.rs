@@ -118,8 +118,12 @@ async fn handle_todos_view(app: &mut App, key: KeyEvent) -> Result<()> {
         }
         KeyCode::Char('e') => {
             if let Some(todo) = app.selected_todo() {
-                app.edit_state = Some(EditState::from_todo(todo, &app.categories));
-                app.mode = Mode::EditingFull;
+                if todo.is_completed {
+                    app.status_message = Some("Cannot edit completed todo (uncomplete first)".to_string());
+                } else {
+                    app.edit_state = Some(EditState::from_todo(todo, &app.categories));
+                    app.mode = Mode::EditingFull;
+                }
             }
         }
         KeyCode::Char('v') | KeyCode::Char(' ') => {
