@@ -2,7 +2,6 @@ use std::collections::HashSet;
 use std::time::Duration;
 
 use anyhow::Result;
-use chrono::Utc;
 use notify_rust::Notification;
 use todoee_core::{config::Config, db::LocalDb};
 use tokio::time::interval;
@@ -47,29 +46,21 @@ async fn check_and_notify(
     config: &Config,
     sent_reminders: &mut HashSet<Uuid>,
 ) -> Result<()> {
-    let now = Utc::now();
-    let advance = chrono::Duration::minutes(config.notifications.advance_minutes as i64);
-    let check_until = now + advance;
+    let window = chrono::Duration::minutes(config.notifications.advance_minutes as i64);
 
-    // Get all non-completed todos
-    let todos = db.list_todos(true).await?;
+    // Use the optimized query instead of filtering in Rust
+    let todos = db.list_todos_with_reminders_due(window).await?;
 
     for todo in &todos {
-        if let Some(reminder_at) = todo.reminder_at {
-            // Skip if already sent notification
-            if sent_reminders.contains(&todo.id) {
-                continue;
-            }
-
-            // Check if reminder is due (within the advance window and not too old)
-            if reminder_at <= check_until && reminder_at > now - chrono::Duration::minutes(1) {
-                send_notification(&todo.title, config)?;
-                sent_reminders.insert(todo.id);
-            }
+        if sent_reminders.contains(&todo.id) {
+            continue;
         }
+
+        send_notification(&todo.title, config)?;
+        sent_reminders.insert(todo.id);
     }
 
-    // Clean up old entries to prevent unbounded memory growth
+    // Cleanup sent_reminders for todos no longer in the result
     sent_reminders.retain(|id| todos.iter().any(|t| &t.id == id));
 
     Ok(())

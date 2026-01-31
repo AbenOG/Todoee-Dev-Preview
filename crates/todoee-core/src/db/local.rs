@@ -760,6 +760,38 @@ impl LocalDb {
         rows.into_iter().map(|r| r.try_into()).collect()
     }
 
+    /// List todos with reminders due within the specified time window.
+    /// Only returns incomplete todos with reminder_at between now and now + window.
+    /// Also includes reminders up to 5 minutes in the past to handle slight delays.
+    pub async fn list_todos_with_reminders_due(
+        &self,
+        window: chrono::Duration,
+    ) -> Result<Vec<Todo>> {
+        let now = Utc::now();
+        let until = now + window;
+
+        let rows: Vec<TodoRow> = sqlx::query_as(
+            r#"
+            SELECT id, user_id, category_id, title, description, due_date,
+                   reminder_at, priority, is_completed, completed_at,
+                   ai_metadata, created_at, updated_at, sync_status
+            FROM todos
+            WHERE reminder_at IS NOT NULL
+              AND reminder_at <= ?1
+              AND reminder_at > ?2
+              AND is_completed = 0
+            ORDER BY reminder_at ASC
+            "#,
+        )
+        .bind(until.to_rfc3339())
+        .bind((now - chrono::Duration::minutes(5)).to_rfc3339())
+        .fetch_all(&self.pool)
+        .await
+        .context("Failed to list todos with reminders due")?;
+
+        rows.into_iter().map(|r| r.try_into()).collect()
+    }
+
     // ==================== Stash Operations ====================
 
     /// Stash a todo (hide it temporarily).
@@ -987,5 +1019,26 @@ mod tests {
         // List categories
         let categories = db.list_categories().await.unwrap();
         assert_eq!(categories.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_list_todos_with_reminders_due() {
+        let db = setup_db().await;
+
+        // Create todo with reminder in 10 minutes
+        let mut todo = Todo::new("Reminder task".to_string(), None);
+        todo.reminder_at = Some(Utc::now() + chrono::Duration::minutes(10));
+        db.create_todo(&todo).await.unwrap();
+
+        // Create todo without reminder
+        let todo2 = Todo::new("No reminder".to_string(), None);
+        db.create_todo(&todo2).await.unwrap();
+
+        // Get todos with reminders due in next 15 minutes
+        let window = chrono::Duration::minutes(15);
+        let results = db.list_todos_with_reminders_due(window).await.unwrap();
+
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].title, "Reminder task");
     }
 }
