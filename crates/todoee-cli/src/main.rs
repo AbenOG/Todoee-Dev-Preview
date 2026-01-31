@@ -313,6 +313,27 @@ enum Commands {
         dry_run: bool,
     },
 
+    /// Export todos to JSON or CSV file
+    ///
+    /// Examples:
+    ///   todoee export                          Export to JSON (default)
+    ///   todoee export -o backup.json           Export to specific file
+    ///   todoee export --format csv             Export as CSV
+    ///   todoee export --include-completed      Include completed todos
+    Export {
+        /// Output file path (default: todoee_export_<timestamp>.<format>)
+        #[arg(short, long)]
+        output: Option<String>,
+
+        /// Export format: json or csv
+        #[arg(short, long, default_value = "json")]
+        format: String,
+
+        /// Include completed todos in export
+        #[arg(long)]
+        include_completed: bool,
+    },
+
     /// Sync todos with remote server
     Sync,
 
@@ -423,6 +444,9 @@ async fn main() -> Result<()> {
         }
         Commands::Gc { days, dry_run } => {
             commands::gc::run(days, dry_run).await?;
+        }
+        Commands::Export { output, format, include_completed } => {
+            commands::export::run(output, format, include_completed).await?;
         }
         Commands::Focus { id, duration } => {
             commands::focus::run(id, duration).await?;
