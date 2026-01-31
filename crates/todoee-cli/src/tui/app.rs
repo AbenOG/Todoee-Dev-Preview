@@ -351,7 +351,6 @@ pub struct App {
     /// Animation frame counter for tick-based animations
     pub animation_frame: usize,
     /// Current spinner style for loading animations
-    #[allow(dead_code)]
     pub spinner_style: Spinner,
 }
 
