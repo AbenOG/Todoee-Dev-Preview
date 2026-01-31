@@ -39,6 +39,16 @@ struct Cli {
 }
 
 #[derive(Subcommand)]
+enum DaemonAction {
+    /// Start the daemon
+    Start,
+    /// Stop the daemon
+    Stop,
+    /// Check daemon status
+    Status,
+}
+
+#[derive(Subcommand)]
 enum Commands {
     // ═══════════════════════════════════════════════════════════════════
     // CORE COMMANDS
@@ -365,6 +375,19 @@ enum Commands {
         init: bool,
     },
 
+    /// Manage the background daemon
+    ///
+    /// The daemon runs in the background and handles reminders.
+    ///
+    /// Examples:
+    ///   todoee daemon start    Start the daemon
+    ///   todoee daemon stop     Stop the daemon
+    ///   todoee daemon status   Check if daemon is running
+    Daemon {
+        #[command(subcommand)]
+        action: DaemonAction,
+    },
+
     // ═══════════════════════════════════════════════════════════════════
     // HELP
     // ═══════════════════════════════════════════════════════════════════
@@ -425,6 +448,11 @@ async fn main() -> Result<()> {
         Commands::Config { init } => {
             commands::config(init).await?;
         }
+        Commands::Daemon { action } => match action {
+            DaemonAction::Start => commands::daemon::run_start().await?,
+            DaemonAction::Stop => commands::daemon::run_stop().await?,
+            DaemonAction::Status => commands::daemon::run_status().await?,
+        },
         Commands::Undo => {
             commands::undo().await?;
         }

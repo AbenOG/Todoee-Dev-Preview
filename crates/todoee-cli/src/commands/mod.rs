@@ -1,6 +1,7 @@
 pub mod add;
 pub mod batch;
 pub mod config;
+pub mod daemon;
 pub mod delete;
 pub mod diff;
 pub mod done;
