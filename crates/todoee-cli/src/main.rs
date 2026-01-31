@@ -4,10 +4,10 @@ use clap::{Parser, Subcommand};
 mod commands;
 mod tui;
 
-/// todoee - A blazing-fast, AI-powered todo manager for developers
+/// todoee - A blazing-fast, offline-first todo manager for developers
 ///
 /// Todoee combines the power of a CLI with a beautiful TUI (terminal UI),
-/// featuring git-like commands, smart AI parsing, and productivity tools
+/// featuring git-like commands, optional AI parsing, and productivity tools
 /// like focus timers and insights analytics.
 ///
 /// GETTING STARTED:
@@ -17,15 +17,15 @@ mod tui;
 ///   todoee --help       Show all commands
 ///
 /// EXAMPLES:
-///   todoee add "Review PR #123 by tomorrow"    AI parses due date
 ///   todoee add "Fix bug" -p 3                  High priority task
+///   todoee add "Review PR" --ai                AI parses natural language
 ///   todoee done abc1                           Complete task by short ID
 ///   todoee undo                                Undo last action
 ///   todoee focus                               Start 25-min focus session
 #[derive(Parser)]
 #[command(name = "todoee")]
 #[command(author, version)]
-#[command(about = "A blazing-fast, AI-powered todo manager for developers")]
+#[command(about = "A blazing-fast, offline-first todo manager for developers")]
 #[command(long_about = None)]
 #[command(after_help = "Run 'todoee' without arguments to launch the interactive TUI.\nRun 'todoee help' for comprehensive guide with examples.")]
 #[command(disable_help_subcommand = true)]
@@ -44,12 +44,12 @@ enum Commands {
     // CORE COMMANDS
     // ═══════════════════════════════════════════════════════════════════
 
-    /// Add a new todo (supports natural language with AI)
+    /// Add a new todo (offline by default, --ai for natural language parsing)
     ///
     /// Examples:
     ///   todoee add "Buy groceries"
-    ///   todoee add "Review PR by Friday" -p 3
-    ///   todoee add "Call dentist tomorrow at 2pm"
+    ///   todoee add "Fix bug" -p 3 -c work
+    ///   todoee add "Review PR by Friday" --ai
     #[command(visible_alias = "a")]
     Add {
         /// Task description (AI parses dates, priorities from natural language)
