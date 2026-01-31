@@ -420,7 +420,7 @@ fn render_help_modal(frame: &mut Frame) {
             Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
         )),
         Line::from("  a           Add task (full editor with all fields)"),
-        Line::from("  A           Quick add (single line, AI-powered)"),
+        Line::from("  A           Quick add (offline, Shift+Enter for AI)"),
         Line::from("  e           Edit selected task"),
         Line::from("  d / Enter   Mark as done"),
         Line::from("  x           Delete task"),
