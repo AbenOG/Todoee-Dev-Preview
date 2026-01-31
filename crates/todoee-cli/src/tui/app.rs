@@ -536,6 +536,7 @@ impl App {
             self.clear_loading();
             self.status_message = Some(format!("✓ Completed: {}", title));
             self.refresh_todos().await?;
+            self.clamp_selection();
         } else if self.todos.get(self.selected).is_some() {
             self.status_message = Some("Already completed".to_string());
         }
@@ -567,8 +568,18 @@ impl App {
             self.clear_loading();
             self.status_message = Some(format!("✗ Deleted: {}", title));
             self.refresh_todos().await?;
+            self.clamp_selection();
         }
         Ok(())
+    }
+
+    /// Clamp the selection index to valid range after list changes
+    fn clamp_selection(&mut self) {
+        if self.todos.is_empty() {
+            self.selected = 0;
+        } else if self.selected >= self.todos.len() {
+            self.selected = self.todos.len() - 1;
+        }
     }
 
     /// Toggle today filter
