@@ -1,25 +1,80 @@
+<div align="center">
+
 # Todoee
 
-A blazing-fast, offline-first todo manager for developers. Combines the power of a CLI with a beautiful TUI (terminal UI), featuring git-like commands, optional AI parsing, and productivity tools.
+**A blazing-fast, offline-first todo manager for developers**
+
+Combines the power of a CLI with a beautiful TUI, featuring git-like commands, optional AI parsing, and productivity tools.
+
+[![Rust](https://img.shields.io/badge/rust-1.75+-orange.svg)](https://www.rust-lang.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
+[Features](#features) · [Installation](#installation) · [Quick Start](#quick-start) · [Usage](#usage) · [Configuration](#configuration)
+
+</div>
+
+---
 
 ## Features
 
-- **Offline-First** - Works without internet, no external dependencies required
-- **Interactive TUI** - Beautiful terminal interface with vim-style navigation
-- **Optional AI Parsing** - Natural language task creation with `--ai` flag
-- **Git-Like Commands** - Undo, redo, stash, log, diff
-- **Focus Mode** - Built-in Pomodoro timer
-- **Smart Recommendations** - "Now" command suggests what to work on
-- **Productivity Insights** - Track completion rates and patterns
-- **Fuzzy Search** - Find tasks quickly
-- **Categories & Priorities** - Organize your work
+| Feature | Description |
+|---------|-------------|
+| **Offline-First** | Works without internet, no external dependencies |
+| **Interactive TUI** | Beautiful terminal interface with vim-style navigation |
+| **Smooth Animations** | Polished UI with loading spinners, progress bars, and transitions |
+| **Optional AI** | Natural language task parsing (opt-in, requires API key) |
+| **Git-Like Commands** | `undo`, `redo`, `stash`, `log`, `diff` |
+| **Focus Mode** | Built-in Pomodoro timer with motivational messages |
+| **Smart Recommendations** | `now` command suggests what to work on |
+| **Productivity Insights** | Track completion rates and patterns |
+| **Fuzzy Search** | Find tasks instantly |
+
+## Demo
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  1: Todos    2: Categories    3: Settings                       │
+├─────────────────────────────────────────────────────────────────┤
+│ > Press 'a' to add task, '/' to search                          │
+├─────────────────────────────────────────────────────────────────┤
+│  Tasks (4)                                                      │
+│ ▸ [ ] !!! Review PR #123                  abc12345  [TODAY]     │
+│   [ ] !!  Write documentation             def67890  [2d]        │
+│   [ ] !   Clean up old branches           ghi11111              │
+│   [x] !!  Fix login bug                   jkl22222              │
+├─────────────────────────────────────────────────────────────────┤
+│ ✓ Completed: Fix login bug                                      │
+├─────────────────────────────────────────────────────────────────┤
+│ j/k:nav  a:add  d:done  x:del  u:undo  z:stash  ?:help  q:quit  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Installation
+
+### From Source
+
+```bash
+# Clone the repository
+git clone https://github.com/AbenOG/Todoee-Dev-Preview.git
+cd Todoee-Dev-Preview
+
+# Build and install
+cargo build --release
+cargo install --path crates/todoee-cli
+
+# Or copy manually
+cp target/release/todoee ~/.local/bin/
+```
+
+### Requirements
+
+- Rust 1.75+ (2024 edition)
+- SQLite (bundled)
 
 ## Quick Start
 
 ```bash
-# Install (from source)
-cargo install --path crates/todoee-cli
-
 # Launch interactive TUI (recommended)
 todoee
 
@@ -29,301 +84,264 @@ todoee list
 todoee done abc1
 ```
 
-## Installation
-
-### From Source
-
-```bash
-git clone https://github.com/youruser/todoee
-cd todoee
-cargo build --release
-cp target/release/todoee ~/.local/bin/
-```
-
-### Configuration
-
-On first run, todoee creates a config file at `~/.config/todoee/config.toml`.
-
-```bash
-# Interactive setup wizard
-todoee config --init
-```
-
-## Usage Guide
+## Usage
 
 ### Interactive TUI
 
-Launch the TUI by running `todoee` without arguments:
+Launch with `todoee` (no arguments). The TUI provides a complete task management experience with keyboard-driven navigation.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│ 1: Todos   2: Categories   3: Settings                      │
-├─────────────────────────────────────────────────────────────┤
-│ > Press 'a' to add task, '/' to search                      │
-├─────────────────────────────────────────────────────────────┤
-│ ▸ [ ] !!! Review PR #123                    [abc12345] [TODAY]│
-│   [ ] !!  Write documentation               [def67890] [2d]   │
-│   [ ] !   Clean up old branches             [ghi11111]        │
-│   [x] !!  Fix login bug                     [jkl22222]        │
-├─────────────────────────────────────────────────────────────┤
-│ ✓ Completed: Fix login bug                                   │
-├─────────────────────────────────────────────────────────────┤
-│ j/k:nav a:add d:done x:del u:undo z:stash ?:help q:quit     │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Essential Keybindings
+#### Navigation
 
 | Key | Action |
 |-----|--------|
-| `j` / `k` | Navigate up/down |
+| `j` / `k` | Move down / up |
+| `g` / `G` | Jump to top / bottom |
+| `1` `2` `3` | Switch tabs (Todos, Categories, Settings) |
+
+#### Core Actions
+
+| Key | Action |
+|-----|--------|
 | `a` | Add task (full editor) |
-| `A` | Quick add (offline, Shift+Enter for AI) |
+| `A` | Quick add (Shift+Enter for AI) |
 | `d` / `Enter` | Mark as done |
 | `x` | Delete task |
 | `e` | Edit task |
 | `v` / `Space` | View details |
-| `u` | Undo |
+
+#### Git-Like Commands
+
+| Key | Action |
+|-----|--------|
+| `u` | Undo last action |
 | `Ctrl+r` | Redo |
-| `z` / `Z` | Stash / Pop |
-| `/` | Search |
-| `?` | Help |
-| `q` | Quit |
+| `z` | Stash selected task |
+| `Z` | Pop from stash |
+
+#### Filters & Sorting
+
+| Key | Action |
+|-----|--------|
+| `/` | Search (fuzzy) |
+| `t` | Toggle today filter |
+| `o` | Toggle overdue filter |
+| `p` | Cycle priority filter |
+| `c` | Cycle category filter |
+| `s` | Cycle sort field |
+| `Tab` | Show/hide completed |
+
+#### Productivity
+
+| Key | Action |
+|-----|--------|
+| `n` | Jump to recommended task |
+| `f` | Start 25-min focus session |
+| `F` | Start 5-min quick focus |
+| `i` | View productivity insights |
 
 ### Command Line Interface
 
 #### Adding Tasks
 
 ```bash
-# Simple task (default, offline)
+# Simple task (offline by default)
 todoee add "Buy groceries"
 
-# With priority and category
-todoee add "Fix bug" --priority 3 --category work
+# With priority (1=low, 2=medium, 3=high)
+todoee add "Fix critical bug" --priority 3
 
-# Enable AI parsing (requires API key)
+# With category
+todoee add "Team meeting" --category work
+
+# With AI parsing (requires configuration)
 todoee add "Review PR by Friday high priority" --ai
 ```
 
 #### Viewing Tasks
 
 ```bash
-# List pending tasks
-todoee list
-
-# List with filters
-todoee list --today
-todoee list --category work
-todoee list --all  # Include completed
-
-# Different views
-todoee head 10      # 10 most recent
-todoee tail 10      # 10 oldest
-todoee upcoming 5   # Next 5 by due date
-todoee overdue      # Past due date
-
-# Search
-todoee search "meeting"
-
-# Detailed view
-todoee show abc1
+todoee list              # Pending tasks
+todoee list --today      # Due today
+todoee list --all        # Include completed
+todoee overdue           # Past due date
+todoee search "meeting"  # Fuzzy search
+todoee show abc1         # Detailed view
 ```
 
-#### Completing & Editing
+#### Managing Tasks
 
 ```bash
-# Mark done (use short ID prefix)
-todoee done abc1
-
-# Delete
-todoee delete abc1
-
-# Edit
+todoee done abc1         # Mark complete
+todoee delete abc1       # Delete
 todoee edit abc1 --title "New title"
-todoee edit abc1 --priority 3 --category urgent
+todoee edit abc1 --priority 3
 ```
 
-#### Git-Like Commands
+#### Git-Like Operations
 
 ```bash
-# Undo/Redo
-todoee undo
-todoee redo
-
-# View history
-todoee log
-todoee log -n 20 --oneline
-
-# See recent changes
-todoee diff
-todoee diff --hours 48
-
-# Stash (hide temporarily)
-todoee stash push abc1
-todoee stash push abc1 -m "WIP feature"
-todoee stash pop
-todoee stash list
-todoee stash clear
+todoee undo              # Undo last action
+todoee redo              # Redo
+todoee log               # View history
+todoee diff              # Recent changes
+todoee stash push abc1   # Stash a task
+todoee stash pop         # Restore stashed
 ```
 
 #### Batch Operations
 
 ```bash
-# Complete multiple
 todoee batch done abc1 def2 ghi3
-
-# Delete multiple
 todoee batch delete abc1 def2
-
-# Set priority for multiple
-todoee batch priority 3 abc1 def2 ghi3
+todoee batch priority 3 abc1 def2
 ```
 
 #### Productivity
 
 ```bash
-# What should I work on?
-todoee now
-
-# Focus session (Pomodoro)
-todoee focus              # 25 min, auto-picks task
-todoee focus abc1         # Focus on specific task
-todoee focus -d 45        # Custom duration
-
-# Analytics
-todoee insights
-todoee insights --days 7
+todoee now               # What should I work on?
+todoee focus             # 25-min Pomodoro
+todoee focus abc1 -d 45  # Custom duration
+todoee insights          # Weekly stats
 ```
-
-#### Maintenance
-
-```bash
-# Clean up old items
-todoee gc                 # Delete > 30 days old
-todoee gc --days 7        # Delete > 7 days old
-todoee gc --dry-run       # Preview only
-
-# Sync with server
-todoee sync
-```
-
-## Filters & Sorting (TUI)
-
-| Key | Filter/Sort |
-|-----|-------------|
-| `t` | Toggle today filter |
-| `o` | Toggle overdue filter |
-| `p` | Cycle priority filter |
-| `c` | Cycle category filter |
-| `s` | Cycle sort field |
-| `S` | Toggle sort order |
-| `Tab` | Show/hide completed |
-
-## Priority Levels
-
-| Level | Symbol | CLI Flag |
-|-------|--------|----------|
-| High | `!!!` (red) | `-p 3` |
-| Medium | `!!` (yellow) | `-p 2` |
-| Low | `!` (green) | `-p 1` |
 
 ## Focus Mode
 
-The built-in Pomodoro timer helps you concentrate:
+Built-in Pomodoro timer with progress tracking and motivational messages:
 
 ```
-┌──────────────────────────────────────┐
-│              FOCUS MODE              │
-│                                      │
-│        Review PR #123                │
-│                                      │
-│              23:45                   │
-│                                      │
-│   [###############--------------]    │
-│                                      │
-│ Space:pause  q/Esc:cancel  Enter:done│
-└──────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│              FOCUS MODE                  │
+│                                          │
+│          Review PR #123                  │
+│                                          │
+│               12:34                      │
+│                                          │
+│      [████████████████░░░░░░░░░░░░]      │
+│                                          │
+│          Making progress!                │
+│                                          │
+│  Space: pause   q/Esc: cancel   Enter: done  │
+└──────────────────────────────────────────┘
 ```
 
-Controls:
-- `Space` - Pause/Resume
-- `Enter` - Complete early
-- `q` / `Esc` - Cancel
+- Dynamic progress bar with color changes (green → yellow → red)
+- Blinking colon separator animation
+- Progress-based motivational messages
+- Pause/resume support
 
-## AI Configuration (Optional)
+## Priority Levels
 
-AI parsing is **opt-in** and not required for normal operation. To enable AI-powered task parsing, add to `~/.config/todoee/config.toml`:
+| Level | Display | CLI Flag | Color |
+|-------|---------|----------|-------|
+| High | `!!!` | `-p 3` | Red |
+| Medium | `!!` | `-p 2` | Yellow |
+| Low | `!` | `-p 1` | Green |
+
+## Configuration
+
+Configuration is stored at `~/.config/todoee/config.toml`.
+
+```bash
+# Interactive setup
+todoee config --init
+```
+
+### AI Configuration (Optional)
+
+AI parsing is **opt-in** and not required. To enable:
 
 ```toml
 [ai]
-model = "gpt-4"  # or "claude-3-opus", etc.
-api_key = "your-api-key"  # or use environment variable
+model = "gpt-4"  # or any OpenRouter-compatible model
+api_key = "your-api-key"
 ```
 
-The AI can parse:
+The AI parses natural language for:
 - Due dates: "by Friday", "tomorrow", "next week"
-- Priorities: "urgent", "high priority", "low priority"
-- Categories: "for work", "personal task"
+- Priorities: "urgent", "high priority", "low"
+- Categories: "for work", "personal"
 
 ## Data Storage
 
-- **Config**: `~/.config/todoee/config.toml`
-- **Database**: `~/.local/share/todoee/todoee.db` (SQLite)
+| Type | Location |
+|------|----------|
+| Config | `~/.config/todoee/config.toml` |
+| Database | `~/.local/share/todoee/todoee.db` |
 
-## Tips & Tricks
+## UI Animations
 
-### 1. Use Short IDs
-Don't type full UUIDs. Use the first few characters:
-```bash
-todoee done abc1    # Instead of full UUID
-```
+Todoee features polished UI animations for a smooth experience:
 
-### 2. Chain Commands
-```bash
-todoee add "Quick task" && todoee list
-```
+- **Loading Spinners** - 8 different ASCII animation styles
+- **Progress Bars** - Visual feedback for long operations
+- **Pulsing Cursors** - Subtle selection indicator animation
+- **Status Icons** - Animated success/error feedback
+- **Tab Transitions** - Smooth view switching
+- **Focus Timer** - Animated countdown with blinking separator
+- **Insights Reveal** - Stats count up when opening
 
-### 3. Morning Routine
+All animations run at 250ms intervals for smooth, non-distracting motion.
+
+## Tips
+
+### Keyboard-Only Workflow
+
+1. `todoee` - Open TUI
+2. `A` - Quick add task
+3. `n` - Jump to recommended
+4. `f` - Start focus session
+5. `d` - Mark done when complete
+6. Repeat!
+
+### Morning Routine
+
 ```bash
 todoee overdue      # Check what's late
 todoee now          # Get recommendation
 todoee focus        # Start working
 ```
 
-### 4. Weekly Cleanup
+### Weekly Cleanup
+
 ```bash
 todoee gc --dry-run  # Preview cleanup
-todoee gc            # Actually clean up
+todoee gc            # Clean old items
 todoee insights      # Review productivity
 ```
 
-### 5. Keyboard-Only Workflow
-The TUI is designed for keyboard efficiency:
-1. `todoee` to open
-2. `A` to quick-add (Shift+Enter for AI)
-3. `n` to jump to recommended task
-4. `f` to start focus
-5. `d` when done
-6. Repeat!
-
 ## Troubleshooting
 
-### "AI parsing failed"
-- Check your API key in config
-- Remove `--ai` flag to use offline mode
+| Issue | Solution |
+|-------|----------|
+| "AI parsing failed" | Check API key or use offline mode (remove `--ai`) |
+| "Todo not found" | Use `todoee list --all` or try longer ID prefix |
+| "Nothing to undo" | Undo history is limited; some operations can't be undone |
 
-### "Todo not found"
-- Use `todoee list --all` to see completed todos
-- Try a longer ID prefix if ambiguous
+## Project Structure
 
-### "Nothing to undo"
-- Undo history is limited
-- Some operations (like gc) can't be undone
+```
+todoee/
+├── crates/
+│   ├── todoee-cli/      # CLI + TUI application
+│   ├── todoee-core/     # Business logic & database
+│   └── todoee-daemon/   # Background service (future)
+└── docs/
+    └── plans/           # Development plans
+```
 
 ## Contributing
 
-Contributions welcome! Please read our contributing guidelines.
+Contributions are welcome! Please feel free to submit issues and pull requests.
 
 ## License
 
-MIT License - see LICENSE file for details.
+MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
+<div align="center">
+
+**Built with Rust + Ratatui**
+
+</div>
