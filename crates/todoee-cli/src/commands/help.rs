@@ -12,7 +12,7 @@ const HELP_TEXT: &str = r#"
 
   Launch interactive TUI:     todoee
   Add a task:                 todoee add "Buy groceries"
-  Add with AI parsing:        todoee add "Review PR by Friday high priority"
+  Add with AI parsing:        todoee add "Review PR by Friday" --ai
   List tasks:                 todoee list
   Complete a task:            todoee done abc1
   Undo last action:           todoee undo
@@ -21,10 +21,10 @@ const HELP_TEXT: &str = r#"
 │  CORE COMMANDS                                                                  │
 └─────────────────────────────────────────────────────────────────────────────────┘
 
-  add, a        Add a new task (AI parses natural language)
+  add, a        Add a new task (offline by default)
                   todoee add "task description"
                   todoee add "urgent task" -p 3 -c work
-                  todoee add "plain text" --no-ai
+                  todoee add "Review PR by Friday" --ai
 
   list, ls      List tasks with filters
                   todoee list                    # Pending tasks
@@ -168,7 +168,8 @@ const HELP_TEXT: &str = r#"
     todoee focus                # Start working
 
   Quick capture:
-    todoee add "idea or task"   # AI parses it for you
+    todoee add "idea or task"   # Fast offline add
+    todoee add "meeting tomorrow at 2pm" --ai   # AI parses dates
 
   End of day:
     todoee insights --days 1    # See today's progress
