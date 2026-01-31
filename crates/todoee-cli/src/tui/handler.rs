@@ -338,8 +338,8 @@ async fn handle_adding_mode(app: &mut App, key: KeyEvent) -> Result<()> {
             app.pending_priority = None;
         }
         KeyCode::Enter => {
-            // Use AI if available and Shift not held
-            let use_ai = app.has_ai() && !key.modifiers.contains(KeyModifiers::SHIFT);
+            // Use AI only if Shift held AND AI is configured
+            let use_ai = app.has_ai() && key.modifiers.contains(KeyModifiers::SHIFT);
             app.add_todo_with_ai(use_ai).await?;
             app.mode = Mode::Normal;
             app.pending_priority = None;

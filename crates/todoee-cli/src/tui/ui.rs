@@ -370,7 +370,7 @@ fn render_status(app: &App, frame: &mut Frame, area: Rect) {
 
 fn render_help(app: &App, frame: &mut Frame, area: Rect) {
     let help_text = match app.mode {
-        Mode::Adding => "Enter:submit  Shift+Enter:no-AI  Tab:priority  Esc:cancel",
+        Mode::Adding => "Enter:submit  Shift+Enter:with-AI  Tab:priority  Esc:cancel",
         Mode::Editing => "Enter:submit  Esc:cancel",
         Mode::EditingFull => "Tab:next  Shift+Tab:prev  Enter:save  Esc:cancel",
         Mode::AddingFull => "Tab:next  Shift+Tab:prev  Enter:save  Esc:cancel",
@@ -483,8 +483,8 @@ fn render_help_modal(frame: &mut Frame) {
             "─── QUICK ADD (A) ───",
             Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
         )),
-        Line::from("  Enter       Submit with AI parsing"),
-        Line::from("  Shift+Enter Submit without AI"),
+        Line::from("  Enter       Submit (offline)"),
+        Line::from("  Shift+Enter Submit with AI parsing"),
         Line::from("  Tab         Cycle priority       Ctrl+1/2/3  Set priority"),
         Line::from(""),
         // ─────────────────────────────────────────────────────────────────
