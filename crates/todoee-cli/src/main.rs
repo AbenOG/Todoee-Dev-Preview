@@ -460,7 +460,7 @@ async fn run_interactive() -> Result<()> {
         // Handle events
         match events.next()? {
             tui::Event::Tick => {
-                // Could refresh data periodically here
+                app.animation_frame = app.animation_frame.wrapping_add(1);
             }
             tui::Event::Key(key) => {
                 tui::handle_key_event(&mut app, key).await?;

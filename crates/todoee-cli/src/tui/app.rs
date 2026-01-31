@@ -299,6 +299,8 @@ pub struct App {
     pub insights_data: Option<InsightsData>,
     /// Focus/pomodoro state
     pub focus_state: Option<FocusState>,
+    /// Animation frame counter for tick-based animations
+    pub animation_frame: usize,
 }
 
 /// Calculate fuzzy match score (higher = better match)
@@ -381,6 +383,7 @@ impl App {
             pending_priority: None,
             insights_data: None,
             focus_state: None,
+            animation_frame: 0,
         };
 
         app.refresh_todos().await?;
