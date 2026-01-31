@@ -61,11 +61,7 @@ impl TryFrom<TodoRow> for Todo {
                 .map(|s| DateTime::parse_from_rfc3339(&s).map(|dt| dt.with_timezone(&Utc)))
                 .transpose()
                 .context("Invalid reminder_at")?,
-            priority: match row.priority {
-                1 => Priority::Low,
-                3 => Priority::High,
-                _ => Priority::Medium,
-            },
+            priority: Priority::from_i32(row.priority),
             is_completed: row.is_completed != 0,
             completed_at: row
                 .completed_at

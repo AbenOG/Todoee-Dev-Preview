@@ -13,6 +13,18 @@ pub enum Priority {
     High = 3,
 }
 
+impl Priority {
+    /// Convert an i32 value to a Priority.
+    /// Returns Medium for any value that doesn't match Low (1) or High (3).
+    pub fn from_i32(value: i32) -> Self {
+        match value {
+            1 => Priority::Low,
+            3 => Priority::High,
+            _ => Priority::Medium,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum SyncStatus {
