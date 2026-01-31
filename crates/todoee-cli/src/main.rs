@@ -27,7 +27,8 @@ mod tui;
 #[command(author, version)]
 #[command(about = "A blazing-fast, AI-powered todo manager for developers")]
 #[command(long_about = None)]
-#[command(after_help = "Run 'todoee' without arguments to launch the interactive TUI.\nRun 'todoee <command> --help' for more info on a specific command.")]
+#[command(after_help = "Run 'todoee' without arguments to launch the interactive TUI.\nRun 'todoee help' for comprehensive guide with examples.")]
+#[command(disable_help_subcommand = true)]
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
@@ -323,6 +324,19 @@ enum Commands {
         #[arg(long)]
         init: bool,
     },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // HELP
+    // ═══════════════════════════════════════════════════════════════════
+
+    /// Show comprehensive help with examples and workflows
+    ///
+    /// More detailed than --help, includes:
+    ///   - Command examples
+    ///   - Common workflows
+    ///   - Tips and tricks
+    #[command(name = "help", visible_alias = "h")]
+    Help,
 }
 
 #[tokio::main]
@@ -418,6 +432,9 @@ async fn main() -> Result<()> {
         }
         Commands::Insights { days } => {
             commands::insights::run(days).await?;
+        }
+        Commands::Help => {
+            commands::help()?;
         }
     }
 
