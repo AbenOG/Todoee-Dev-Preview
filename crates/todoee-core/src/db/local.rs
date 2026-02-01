@@ -581,6 +581,17 @@ impl LocalDb {
         rows.into_iter().map(|r| r.try_into()).collect()
     }
 
+    /// Mark a category as synced.
+    pub async fn mark_category_synced(&self, id: Uuid) -> Result<()> {
+        sqlx::query("UPDATE categories SET sync_status = 'synced' WHERE id = ?")
+            .bind(id.to_string())
+            .execute(&self.pool)
+            .await
+            .context("Failed to mark category as synced")?;
+
+        Ok(())
+    }
+
     /// Clear category_id for all todos that belong to a category.
     /// Call this before deleting a category to prevent orphaned references.
     pub async fn clear_category_from_todos(&self, category_id: Uuid) -> Result<u64> {
@@ -1065,5 +1076,22 @@ mod tests {
         let pending = db.list_pending_categories().await.unwrap();
         assert_eq!(pending.len(), 1);
         assert_eq!(pending[0].name, "Work");
+    }
+
+    #[tokio::test]
+    async fn test_mark_category_synced() {
+        let db = setup_db().await;
+
+        let user_id = Uuid::new_v4();
+        let category = Category::new(user_id, "Work".to_string());
+        db.create_category(&category).await.unwrap();
+
+        let pending = db.list_pending_categories().await.unwrap();
+        assert_eq!(pending.len(), 1);
+
+        db.mark_category_synced(category.id).await.unwrap();
+
+        let pending = db.list_pending_categories().await.unwrap();
+        assert_eq!(pending.len(), 0);
     }
 }
