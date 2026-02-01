@@ -384,50 +384,49 @@ advance_minutes = 60
 
     #[test]
     fn test_get_ai_api_key_missing() {
-        let config = Config::default();
-        // Clear the env var to ensure the test is reliable
-        // SAFETY: This is a single-threaded test
-        unsafe { env::remove_var("OPENROUTER_API_KEY") };
-        let result = config.get_ai_api_key();
-        assert!(result.is_err());
+        // Use a unique env var name that won't be set
+        let mut config = Config::default();
+        config.ai.api_key_env = "TODOEE_TEST_MISSING_KEY_12345".to_string();
+
+        temp_env::with_var_unset("TODOEE_TEST_MISSING_KEY_12345", || {
+            let result = config.get_ai_api_key();
+            assert!(result.is_err());
+        });
     }
 
     #[test]
     fn test_get_database_url_missing() {
-        // Use a unique env var name to avoid test conflicts
         let mut config = Config::default();
-        config.database.url_env = "TEST_DB_URL_MISSING".to_string();
-        // Clear the env var to ensure the test is reliable
-        // SAFETY: This is a single-threaded test
-        unsafe { env::remove_var("TEST_DB_URL_MISSING") };
-        let result = config.get_database_url();
-        assert!(result.is_none());
+        config.database.url_env = "TODOEE_TEST_MISSING_DB_12345".to_string();
+
+        temp_env::with_var_unset("TODOEE_TEST_MISSING_DB_12345", || {
+            let result = config.get_database_url();
+            assert!(result.is_none());
+        });
     }
 
     #[test]
     fn test_get_ai_api_key_set() {
-        let config = Config::default();
-        // SAFETY: This is a single-threaded test
-        unsafe { env::set_var("OPENROUTER_API_KEY", "test_key_123") };
-        let result = config.get_ai_api_key();
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), "test_key_123");
-        // SAFETY: This is a single-threaded test
-        unsafe { env::remove_var("OPENROUTER_API_KEY") };
+        let mut config = Config::default();
+        config.ai.api_key_env = "TODOEE_TEST_API_KEY".to_string();
+
+        temp_env::with_var("TODOEE_TEST_API_KEY", Some("test_key_123"), || {
+            let result = config.get_ai_api_key();
+            assert!(result.is_ok());
+            assert_eq!(result.unwrap(), "test_key_123");
+        });
     }
 
     #[test]
     fn test_get_database_url_set() {
-        // Use a unique env var name to avoid test conflicts
         let mut config = Config::default();
-        config.database.url_env = "TEST_DB_URL_SET".to_string();
-        // SAFETY: This is a single-threaded test
-        unsafe { env::set_var("TEST_DB_URL_SET", "postgres://localhost/test") };
-        let result = config.get_database_url();
-        assert!(result.is_some());
-        assert_eq!(result.unwrap(), "postgres://localhost/test");
-        // SAFETY: This is a single-threaded test
-        unsafe { env::remove_var("TEST_DB_URL_SET") };
+        config.database.url_env = "TODOEE_TEST_DB_URL".to_string();
+
+        temp_env::with_var("TODOEE_TEST_DB_URL", Some("postgres://localhost/test"), || {
+            let result = config.get_database_url();
+            assert!(result.is_some());
+            assert_eq!(result.unwrap(), "postgres://localhost/test");
+        });
     }
 
     #[test]

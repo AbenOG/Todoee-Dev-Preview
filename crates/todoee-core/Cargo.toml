@@ -23,3 +23,4 @@ zeroize = { version = "1.8", features = ["derive"] }
 [dev-dependencies]
 tokio-test = "0.4"
 tempfile = "3"
+temp-env = "0.3"
