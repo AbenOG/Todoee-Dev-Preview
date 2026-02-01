@@ -41,29 +41,27 @@ impl EventHandler {
                     .unwrap_or(tick_rate);
 
                 match event::poll(timeout) {
-                    Ok(true) => {
-                        match event::read() {
-                            Ok(event) => match event {
-                                CrosstermEvent::Key(e) => {
-                                    if handler_sender.send(Event::Key(e)).is_err() {
-                                        break;
-                                    }
+                    Ok(true) => match event::read() {
+                        Ok(event) => match event {
+                            CrosstermEvent::Key(e) => {
+                                if handler_sender.send(Event::Key(e)).is_err() {
+                                    break;
                                 }
-                                CrosstermEvent::Mouse(e) => {
-                                    if handler_sender.send(Event::Mouse(e)).is_err() {
-                                        break;
-                                    }
+                            }
+                            CrosstermEvent::Mouse(e) => {
+                                if handler_sender.send(Event::Mouse(e)).is_err() {
+                                    break;
                                 }
-                                CrosstermEvent::Resize(w, h) => {
-                                    if handler_sender.send(Event::Resize(w, h)).is_err() {
-                                        break;
-                                    }
+                            }
+                            CrosstermEvent::Resize(w, h) => {
+                                if handler_sender.send(Event::Resize(w, h)).is_err() {
+                                    break;
                                 }
-                                _ => {}
-                            },
-                            Err(_) => continue,
-                        }
-                    }
+                            }
+                            _ => {}
+                        },
+                        Err(_) => continue,
+                    },
                     Ok(false) => {}
                     Err(_) => continue,
                 }

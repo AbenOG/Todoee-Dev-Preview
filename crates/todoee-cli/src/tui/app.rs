@@ -1,6 +1,8 @@
 use anyhow::Result;
 use chrono::{Duration, Local, NaiveDate, NaiveDateTime, TimeZone, Utc};
-use todoee_core::{Category, Config, EntityType, LocalDb, Operation, OperationType, Priority, Todo};
+use todoee_core::{
+    Category, Config, EntityType, LocalDb, Operation, OperationType, Priority, Todo,
+};
 use tui_input::Input;
 
 use super::spinner::Spinner;
@@ -855,7 +857,10 @@ impl App {
             self.clear_loading();
 
             let msg = if affected > 0 {
-                format!("Deleted category '{}' ({} todos uncategorized)", name, affected)
+                format!(
+                    "Deleted category '{}' ({} todos uncategorized)",
+                    name, affected
+                )
             } else {
                 format!("Deleted category: {}", name)
             };
@@ -1205,10 +1210,7 @@ impl App {
         let completed_7d = all_todos
             .iter()
             .filter(|t| {
-                t.is_completed
-                    && t.completed_at
-                        .map(|c| c > seven_days_ago)
-                        .unwrap_or(false)
+                t.is_completed && t.completed_at.map(|c| c > seven_days_ago).unwrap_or(false)
             })
             .count();
 

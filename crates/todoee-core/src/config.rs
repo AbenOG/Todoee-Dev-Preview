@@ -178,10 +178,12 @@ impl Config {
         let config_path = Self::config_path()?;
 
         if config_path.exists() {
-            let content = fs::read_to_string(&config_path)
-                .with_context(|| format!("Failed to read config file: {}", config_path.display()))?;
-            let config: Config = toml::from_str(&content)
-                .with_context(|| format!("Failed to parse config file: {}", config_path.display()))?;
+            let content = fs::read_to_string(&config_path).with_context(|| {
+                format!("Failed to read config file: {}", config_path.display())
+            })?;
+            let config: Config = toml::from_str(&content).with_context(|| {
+                format!("Failed to parse config file: {}", config_path.display())
+            })?;
             Ok(config)
         } else {
             Ok(Config::default())
@@ -198,20 +200,27 @@ impl Config {
 
         // Create config directory if it doesn't exist
         if !config_dir.exists() {
-            fs::create_dir_all(&config_dir)
-                .with_context(|| format!("Failed to create config directory: {}", config_dir.display()))?;
+            fs::create_dir_all(&config_dir).with_context(|| {
+                format!(
+                    "Failed to create config directory: {}",
+                    config_dir.display()
+                )
+            })?;
 
             // Set directory permissions to 0700 on Unix
             #[cfg(unix)]
             {
                 let dir_perms = std::fs::Permissions::from_mode(0o700);
-                fs::set_permissions(&config_dir, dir_perms)
-                    .with_context(|| format!("Failed to set permissions on config directory: {}", config_dir.display()))?;
+                fs::set_permissions(&config_dir, dir_perms).with_context(|| {
+                    format!(
+                        "Failed to set permissions on config directory: {}",
+                        config_dir.display()
+                    )
+                })?;
             }
         }
 
-        let content = toml::to_string_pretty(self)
-            .context("Failed to serialize config to TOML")?;
+        let content = toml::to_string_pretty(self).context("Failed to serialize config to TOML")?;
 
         fs::write(&config_path, &content)
             .with_context(|| format!("Failed to write config file: {}", config_path.display()))?;
@@ -220,8 +229,12 @@ impl Config {
         #[cfg(unix)]
         {
             let file_perms = std::fs::Permissions::from_mode(0o600);
-            fs::set_permissions(&config_path, file_perms)
-                .with_context(|| format!("Failed to set permissions on config file: {}", config_path.display()))?;
+            fs::set_permissions(&config_path, file_perms).with_context(|| {
+                format!(
+                    "Failed to set permissions on config file: {}",
+                    config_path.display()
+                )
+            })?;
         }
 
         Ok(())
@@ -422,11 +435,15 @@ advance_minutes = 60
         let mut config = Config::default();
         config.database.url_env = "TODOEE_TEST_DB_URL".to_string();
 
-        temp_env::with_var("TODOEE_TEST_DB_URL", Some("postgres://localhost/test"), || {
-            let result = config.get_database_url();
-            assert!(result.is_some());
-            assert_eq!(result.unwrap(), "postgres://localhost/test");
-        });
+        temp_env::with_var(
+            "TODOEE_TEST_DB_URL",
+            Some("postgres://localhost/test"),
+            || {
+                let result = config.get_database_url();
+                assert!(result.is_some());
+                assert_eq!(result.unwrap(), "postgres://localhost/test");
+            },
+        );
     }
 
     #[test]

@@ -145,9 +145,11 @@ impl AiClient {
     /// - The API key environment variable is not set
     /// - The AI model is not configured
     pub fn new(config: &Config) -> Result<Self, TodoeeError> {
-        let api_key = config.get_ai_api_key().map_err(|e| TodoeeError::AiService {
-            message: format!("Failed to get AI API key: {}", e),
-        })?;
+        let api_key = config
+            .get_ai_api_key()
+            .map_err(|e| TodoeeError::AiService {
+                message: format!("Failed to get AI API key: {}", e),
+            })?;
 
         let model = config
             .ai
@@ -364,7 +366,8 @@ I hope this helps!"#;
 
     #[test]
     fn test_extract_json_with_strings_containing_braces() {
-        let text = r#"{"title": "Fix {bug} in code", "description": "The } character breaks things"}"#;
+        let text =
+            r#"{"title": "Fix {bug} in code", "description": "The } character breaks things"}"#;
 
         let extracted = extract_json(text).expect("Should handle braces in strings");
         let parsed: serde_json::Value =

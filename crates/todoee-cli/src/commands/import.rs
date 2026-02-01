@@ -37,8 +37,7 @@ pub async fn import_todos(
     let content = fs::read_to_string(input_path)
         .with_context(|| format!("Failed to read import file: {}", input_path.display()))?;
 
-    let data: ImportData = serde_json::from_str(&content)
-        .context("Failed to parse import JSON")?;
+    let data: ImportData = serde_json::from_str(&content).context("Failed to parse import JSON")?;
 
     let mut imported_categories = 0;
     let mut imported_todos = 0;

@@ -54,7 +54,9 @@ impl<'a> CategoryListWidget<'a> {
                     Span::styled(
                         selector,
                         if is_selected {
-                            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)
+                            Style::default()
+                                .fg(Color::Cyan)
+                                .add_modifier(Modifier::BOLD)
                         } else {
                             Style::default()
                         },

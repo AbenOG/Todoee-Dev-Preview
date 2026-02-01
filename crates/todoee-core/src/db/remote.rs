@@ -4,11 +4,11 @@
 //! that handles CRUD operations for syncing todos with the cloud.
 
 use chrono::{DateTime, Utc};
-use sqlx::{postgres::PgPoolOptions, PgPool, Row};
+use sqlx::{PgPool, Row, postgres::PgPoolOptions};
 use uuid::Uuid;
 
 use crate::models::{Category, Priority, SyncStatus, Todo};
-use crate::{TodoeeError, Result as TodoeeResult};
+use crate::{Result as TodoeeResult, TodoeeError};
 
 /// Remote PostgreSQL database for cloud sync.
 pub struct RemoteDb {
@@ -77,36 +77,30 @@ impl RemoteDb {
         .map_err(TodoeeError::Database)?;
 
         // Create indexes for efficient queries
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_todos_updated_at ON todos(updated_at)")
+            .execute(&self.pool)
+            .await
+            .map_err(TodoeeError::Database)?;
+
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_todos_deleted_at ON todos(deleted_at)")
+            .execute(&self.pool)
+            .await
+            .map_err(TodoeeError::Database)?;
+
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_todos_user_id ON todos(user_id)")
+            .execute(&self.pool)
+            .await
+            .map_err(TodoeeError::Database)?;
+
         sqlx::query(
-            "CREATE INDEX IF NOT EXISTS idx_todos_updated_at ON todos(updated_at)"
+            "CREATE INDEX IF NOT EXISTS idx_categories_updated_at ON categories(updated_at)",
         )
         .execute(&self.pool)
         .await
         .map_err(TodoeeError::Database)?;
 
         sqlx::query(
-            "CREATE INDEX IF NOT EXISTS idx_todos_deleted_at ON todos(deleted_at)"
-        )
-        .execute(&self.pool)
-        .await
-        .map_err(TodoeeError::Database)?;
-
-        sqlx::query(
-            "CREATE INDEX IF NOT EXISTS idx_todos_user_id ON todos(user_id)"
-        )
-        .execute(&self.pool)
-        .await
-        .map_err(TodoeeError::Database)?;
-
-        sqlx::query(
-            "CREATE INDEX IF NOT EXISTS idx_categories_updated_at ON categories(updated_at)"
-        )
-        .execute(&self.pool)
-        .await
-        .map_err(TodoeeError::Database)?;
-
-        sqlx::query(
-            "CREATE INDEX IF NOT EXISTS idx_categories_deleted_at ON categories(deleted_at)"
+            "CREATE INDEX IF NOT EXISTS idx_categories_deleted_at ON categories(deleted_at)",
         )
         .execute(&self.pool)
         .await
@@ -124,10 +118,7 @@ impl RemoteDb {
             Priority::High => 3,
         };
 
-        let ai_metadata = todo
-            .ai_metadata
-            .as_ref()
-            .map(|v| v.to_string());
+        let ai_metadata = todo.ai_metadata.as_ref().map(|v| v.to_string());
 
         sqlx::query(
             r#"
@@ -218,20 +209,22 @@ impl RemoteDb {
 
     /// Soft delete a todo by setting its deleted_at timestamp.
     pub async fn soft_delete_todo(&self, id: Uuid) -> TodoeeResult<()> {
-        sqlx::query(
-            "UPDATE todos SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1"
-        )
-        .bind(id)
-        .execute(&self.pool)
-        .await
-        .map_err(TodoeeError::Database)?;
+        sqlx::query("UPDATE todos SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1")
+            .bind(id)
+            .execute(&self.pool)
+            .await
+            .map_err(TodoeeError::Database)?;
 
         Ok(())
     }
 
     /// Upsert a category using last-write-wins conflict resolution.
     /// Only updates if the incoming `updated_at` is greater than the existing one.
-    pub async fn upsert_category(&self, category: &Category, updated_at: DateTime<Utc>) -> TodoeeResult<()> {
+    pub async fn upsert_category(
+        &self,
+        category: &Category,
+        updated_at: DateTime<Utc>,
+    ) -> TodoeeResult<()> {
         sqlx::query(
             r#"
             INSERT INTO categories (
@@ -294,13 +287,11 @@ impl RemoteDb {
 
     /// Soft delete a category by setting its deleted_at timestamp.
     pub async fn soft_delete_category(&self, id: Uuid) -> TodoeeResult<()> {
-        sqlx::query(
-            "UPDATE categories SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1"
-        )
-        .bind(id)
-        .execute(&self.pool)
-        .await
-        .map_err(TodoeeError::Database)?;
+        sqlx::query("UPDATE categories SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1")
+            .bind(id)
+            .execute(&self.pool)
+            .await
+            .map_err(TodoeeError::Database)?;
 
         Ok(())
     }
@@ -313,17 +304,19 @@ mod tests {
     #[tokio::test]
     #[ignore] // Requires NEON_DATABASE_URL environment variable
     async fn test_remote_db_connection() {
-        let url = std::env::var("NEON_DATABASE_URL")
-            .expect("NEON_DATABASE_URL must be set");
+        let url = std::env::var("NEON_DATABASE_URL").expect("NEON_DATABASE_URL must be set");
         let db = RemoteDb::new(&url).await;
-        assert!(db.is_ok(), "Failed to connect to remote database: {:?}", db.err());
+        assert!(
+            db.is_ok(),
+            "Failed to connect to remote database: {:?}",
+            db.err()
+        );
     }
 
     #[tokio::test]
     #[ignore] // Requires NEON_DATABASE_URL environment variable
     async fn test_remote_db_upsert_and_get() {
-        let url = std::env::var("NEON_DATABASE_URL")
-            .expect("NEON_DATABASE_URL must be set");
+        let url = std::env::var("NEON_DATABASE_URL").expect("NEON_DATABASE_URL must be set");
         let db = RemoteDb::new(&url).await.expect("Failed to connect");
 
         // Create a test todo
@@ -334,11 +327,19 @@ mod tests {
 
         // Get todos since before it was created
         let since = todo.created_at - chrono::Duration::seconds(1);
-        let todos = db.get_todos_since(since).await.expect("Failed to get todos");
+        let todos = db
+            .get_todos_since(since)
+            .await
+            .expect("Failed to get todos");
 
-        assert!(todos.iter().any(|t| t.id == todo.id), "Todo not found after upsert");
+        assert!(
+            todos.iter().any(|t| t.id == todo.id),
+            "Todo not found after upsert"
+        );
 
         // Clean up - soft delete
-        db.soft_delete_todo(todo.id).await.expect("Failed to soft delete todo");
+        db.soft_delete_todo(todo.id)
+            .await
+            .expect("Failed to soft delete todo");
     }
 }

@@ -99,7 +99,9 @@ pub async fn run(cmd: BatchCommand) -> Result<()> {
         }
         BatchCommand::Priority { level, ids } => {
             if ids.is_empty() {
-                anyhow::bail!("No IDs provided. Usage: todoee batch priority <level> <id1> <id2> ...");
+                anyhow::bail!(
+                    "No IDs provided. Usage: todoee batch priority <level> <id1> <id2> ..."
+                );
             }
             let priority = match level {
                 1 => Priority::Low,

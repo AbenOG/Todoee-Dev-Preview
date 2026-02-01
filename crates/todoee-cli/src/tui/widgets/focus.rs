@@ -1,9 +1,9 @@
 use ratatui::{
+    Frame,
     layout::{Alignment, Rect},
     style::{Color, Modifier, Style, Stylize},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph},
-    Frame,
 };
 
 use crate::tui::app::FocusState;
@@ -44,11 +44,7 @@ impl<'a> FocusWidget<'a> {
         // Animated header when paused
         let header = if self.state.paused {
             let blink = self.animation_frame % 4 < 2;
-            if blink {
-                "⏸ PAUSED"
-            } else {
-                "  PAUSED"
-            }
+            if blink { "⏸ PAUSED" } else { "  PAUSED" }
         } else {
             "FOCUS MODE"
         };
@@ -94,9 +90,7 @@ impl<'a> FocusWidget<'a> {
             Line::from(""),
             Line::from(Span::styled(
                 format!("{:02}{}{:02}", mins, separator, secs),
-                Style::default()
-                    .fg(time_color)
-                    .add_modifier(Modifier::BOLD),
+                Style::default().fg(time_color).add_modifier(Modifier::BOLD),
             )),
             Line::from(""),
             Line::from(Span::styled(bar, Style::default().fg(time_color))),

@@ -187,12 +187,16 @@ fn parse_reminder_time(s: &str) -> Option<chrono::DateTime<chrono::Utc>> {
 
     // Handle "in X minutes/hours"
     if let Some(rest) = s.strip_prefix("in ") {
-        if let Some(minutes) = rest.strip_suffix(" minutes").or_else(|| rest.strip_suffix(" minute"))
+        if let Some(minutes) = rest
+            .strip_suffix(" minutes")
+            .or_else(|| rest.strip_suffix(" minute"))
             && let Ok(m) = minutes.trim().parse::<i64>()
         {
             return Some(now + chrono::Duration::minutes(m));
         }
-        if let Some(hours) = rest.strip_suffix(" hours").or_else(|| rest.strip_suffix(" hour"))
+        if let Some(hours) = rest
+            .strip_suffix(" hours")
+            .or_else(|| rest.strip_suffix(" hour"))
             && let Ok(h) = hours.trim().parse::<i64>()
         {
             return Some(now + chrono::Duration::hours(h));

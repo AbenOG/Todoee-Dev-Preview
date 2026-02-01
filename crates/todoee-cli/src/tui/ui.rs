@@ -368,7 +368,9 @@ fn render_tasks(app: &App, frame: &mut Frame, area: Rect) {
                 Span::styled(
                     selector,
                     if is_selected {
-                        Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)
+                        Style::default()
+                            .fg(Color::Cyan)
+                            .add_modifier(Modifier::BOLD)
                     } else {
                         Style::default()
                     },
@@ -509,7 +511,9 @@ fn render_help_modal(frame: &mut Frame) {
         // ─────────────────────────────────────────────────────────────────
         Line::from(Span::styled(
             "─── NAVIGATION ───",
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
         )),
         Line::from("  j / ↓       Move down            g           Jump to top"),
         Line::from("  k / ↑       Move up              G           Jump to bottom"),
@@ -518,7 +522,9 @@ fn render_help_modal(frame: &mut Frame) {
         // ─────────────────────────────────────────────────────────────────
         Line::from(Span::styled(
             "─── CORE ACTIONS ───",
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
         )),
         Line::from("  a           Add task (full editor with all fields)"),
         Line::from("  A           Quick add (offline, Shift+Enter for AI)"),
@@ -530,7 +536,9 @@ fn render_help_modal(frame: &mut Frame) {
         // ─────────────────────────────────────────────────────────────────
         Line::from(Span::styled(
             "─── GIT-LIKE COMMANDS ───",
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
         )),
         Line::from("  u           Undo last action"),
         Line::from("  Ctrl+r      Redo last undone action"),
@@ -540,7 +548,9 @@ fn render_help_modal(frame: &mut Frame) {
         // ─────────────────────────────────────────────────────────────────
         Line::from(Span::styled(
             "─── FILTERS & SORTING ───",
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
         )),
         Line::from("  /           Search (fuzzy matching)"),
         Line::from("  t           Toggle today filter"),
@@ -554,7 +564,9 @@ fn render_help_modal(frame: &mut Frame) {
         // ─────────────────────────────────────────────────────────────────
         Line::from(Span::styled(
             "─── PRODUCTIVITY ───",
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
         )),
         Line::from("  n           Jump to recommended task (smart pick)"),
         Line::from("  f           Start focus session (25 min pomodoro)"),
@@ -564,7 +576,9 @@ fn render_help_modal(frame: &mut Frame) {
         // ─────────────────────────────────────────────────────────────────
         Line::from(Span::styled(
             "─── FOCUS MODE ───",
-            Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
         )),
         Line::from("  Space       Pause / Resume timer"),
         Line::from("  Enter       Complete early"),
@@ -573,7 +587,9 @@ fn render_help_modal(frame: &mut Frame) {
         // ─────────────────────────────────────────────────────────────────
         Line::from(Span::styled(
             "─── EDITOR MODE ───",
-            Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
         )),
         Line::from("  Tab         Next field           Shift+Tab   Previous field"),
         Line::from("  1 / 2 / 3   Set priority (on priority field)"),
@@ -582,7 +598,9 @@ fn render_help_modal(frame: &mut Frame) {
         // ─────────────────────────────────────────────────────────────────
         Line::from(Span::styled(
             "─── QUICK ADD (A) ───",
-            Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
         )),
         Line::from("  Enter       Submit (offline)"),
         Line::from("  Shift+Enter Submit with AI parsing"),
@@ -591,7 +609,9 @@ fn render_help_modal(frame: &mut Frame) {
         // ─────────────────────────────────────────────────────────────────
         Line::from(Span::styled(
             "─── GENERAL ───",
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
         )),
         Line::from("  ?           Toggle this help     q           Quit"),
         Line::from("  Esc         Close modal / Cancel"),

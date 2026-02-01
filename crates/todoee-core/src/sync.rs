@@ -4,10 +4,10 @@
 //! database and the remote PostgreSQL database (Neon).
 
 use crate::{
+    Result as TodoeeResult, TodoeeError,
     config::Config,
     db::{LocalDb, RemoteDb},
     models::SyncStatus,
-    Result as TodoeeResult, TodoeeError,
 };
 use chrono::{DateTime, Utc};
 
@@ -34,14 +34,17 @@ impl SyncService {
     /// This initializes the local database and optionally connects to the remote
     /// database if `NEON_DATABASE_URL` is configured.
     pub async fn new(config: &Config) -> TodoeeResult<Self> {
-        let local = LocalDb::new(&config.local_db_path().map_err(|e| {
-            TodoeeError::Config(format!("Failed to get local db path: {}", e))
-        })?).await.map_err(|e| {
-            TodoeeError::Config(format!("Failed to open local database: {}", e))
-        })?;
-        local.run_migrations().await.map_err(|e| {
-            TodoeeError::Config(format!("Failed to run migrations: {}", e))
-        })?;
+        let local = LocalDb::new(
+            &config
+                .local_db_path()
+                .map_err(|e| TodoeeError::Config(format!("Failed to get local db path: {}", e)))?,
+        )
+        .await
+        .map_err(|e| TodoeeError::Config(format!("Failed to open local database: {}", e)))?;
+        local
+            .run_migrations()
+            .await
+            .map_err(|e| TodoeeError::Config(format!("Failed to run migrations: {}", e)))?;
 
         let remote = if let Some(url) = config.get_database_url() {
             Some(RemoteDb::new(&url).await?)
@@ -84,7 +87,8 @@ impl SyncService {
     pub async fn sync(&self) -> TodoeeResult<SyncResult> {
         let remote = self.remote.as_ref().ok_or_else(|| {
             TodoeeError::Config(
-                "Cloud sync not configured. Set NEON_DATABASE_URL environment variable.".to_string(),
+                "Cloud sync not configured. Set NEON_DATABASE_URL environment variable."
+                    .to_string(),
             )
         })?;
 
@@ -93,17 +97,24 @@ impl SyncService {
         // 1. Upload pending categories FIRST (before todos that reference them)
         let pending_categories = self.local.list_pending_categories().await.map_err(|e| {
             TodoeeError::Database(sqlx::Error::Protocol(format!(
-                "Failed to list pending categories: {}", e
+                "Failed to list pending categories: {}",
+                e
             )))
         })?;
 
         for category in pending_categories {
-            remote.upsert_category(&category, chrono::Utc::now()).await?;
-            self.local.mark_category_synced(category.id).await.map_err(|e| {
-                TodoeeError::Database(sqlx::Error::Protocol(format!(
-                    "Failed to mark category synced: {}", e
-                )))
-            })?;
+            remote
+                .upsert_category(&category, chrono::Utc::now())
+                .await?;
+            self.local
+                .mark_category_synced(category.id)
+                .await
+                .map_err(|e| {
+                    TodoeeError::Database(sqlx::Error::Protocol(format!(
+                        "Failed to mark category synced: {}",
+                        e
+                    )))
+                })?;
         }
 
         // 2. Upload local todo changes (existing code continues...)
@@ -128,7 +139,8 @@ impl SyncService {
         // 2.5. Upload local deletions to remote
         let deleted_ids = self.local.list_unsynced_deletions().await.map_err(|e| {
             TodoeeError::Database(sqlx::Error::Protocol(format!(
-                "Failed to list unsynced deletions: {}", e
+                "Failed to list unsynced deletions: {}",
+                e
             )))
         })?;
 
@@ -139,7 +151,8 @@ impl SyncService {
             }
             self.local.mark_deletion_synced(id).await.map_err(|e| {
                 TodoeeError::Database(sqlx::Error::Protocol(format!(
-                    "Failed to mark deletion synced: {}", e
+                    "Failed to mark deletion synced: {}",
+                    e
                 )))
             })?;
         }
@@ -169,7 +182,10 @@ impl SyncService {
                 }
                 Ok(None) => {
                     // Check if this was locally deleted - if so, skip re-downloading
-                    let is_deleted = self.local.is_locally_deleted(remote_todo.id).await
+                    let is_deleted = self
+                        .local
+                        .is_locally_deleted(remote_todo.id)
+                        .await
                         .unwrap_or(false);
 
                     if is_deleted {

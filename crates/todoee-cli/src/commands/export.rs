@@ -24,11 +24,7 @@ struct ExportData {
 /// By default, exports all todos (including completed). This is the public API
 /// for programmatic export, used by tests and intended for future sync functionality.
 #[allow(dead_code)]
-pub async fn export_todos(
-    db: &LocalDb,
-    output_path: &Path,
-    format: ExportFormat,
-) -> Result<usize> {
+pub async fn export_todos(db: &LocalDb, output_path: &Path, format: ExportFormat) -> Result<usize> {
     export_todos_impl(db, output_path, format, true).await
 }
 
@@ -54,8 +50,9 @@ async fn export_todos_impl(
         ExportFormat::Json => {
             let json = serde_json::to_string_pretty(&data)
                 .context("Failed to serialize export data to JSON")?;
-            std::fs::write(output_path, json)
-                .with_context(|| format!("Failed to write export file: {}", output_path.display()))?;
+            std::fs::write(output_path, json).with_context(|| {
+                format!("Failed to write export file: {}", output_path.display())
+            })?;
         }
         ExportFormat::Csv => {
             let mut wtr = csv::Writer::from_path(output_path)
@@ -64,8 +61,7 @@ async fn export_todos_impl(
                 wtr.serialize(todo)
                     .context("Failed to serialize todo to CSV")?;
             }
-            wtr.flush()
-                .context("Failed to flush CSV writer")?;
+            wtr.flush().context("Failed to flush CSV writer")?;
         }
     }
 

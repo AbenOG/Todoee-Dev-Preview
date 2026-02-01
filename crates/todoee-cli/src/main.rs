@@ -27,7 +27,9 @@ mod tui;
 #[command(author, version)]
 #[command(about = "A blazing-fast, offline-first todo manager for developers")]
 #[command(long_about = None)]
-#[command(after_help = "Run 'todoee' without arguments to launch the interactive TUI.\nRun 'todoee help' for comprehensive guide with examples.")]
+#[command(
+    after_help = "Run 'todoee' without arguments to launch the interactive TUI.\nRun 'todoee help' for comprehensive guide with examples."
+)]
 #[command(disable_help_subcommand = true)]
 struct Cli {
     #[command(subcommand)]
@@ -53,7 +55,6 @@ enum Commands {
     // ═══════════════════════════════════════════════════════════════════
     // CORE COMMANDS
     // ═══════════════════════════════════════════════════════════════════
-
     /// Add a new todo (offline by default, --ai for natural language parsing)
     ///
     /// Examples:
@@ -149,7 +150,6 @@ enum Commands {
     // ═══════════════════════════════════════════════════════════════════
     // GIT-LIKE COMMANDS
     // ═══════════════════════════════════════════════════════════════════
-
     /// Undo the last operation (like git)
     ///
     /// Reverses add, delete, complete, edit, and stash operations
@@ -200,7 +200,6 @@ enum Commands {
     // ═══════════════════════════════════════════════════════════════════
     // VIEW COMMANDS
     // ═══════════════════════════════════════════════════════════════════
-
     /// Show N most recently created todos
     ///
     /// Example: todoee head 10
@@ -260,7 +259,6 @@ enum Commands {
     // ═══════════════════════════════════════════════════════════════════
     // PRODUCTIVITY COMMANDS
     // ═══════════════════════════════════════════════════════════════════
-
     /// Start a focus session (Pomodoro timer)
     ///
     /// Interactive timer with keyboard controls:
@@ -298,7 +296,6 @@ enum Commands {
     // ═══════════════════════════════════════════════════════════════════
     // BATCH & MAINTENANCE
     // ═══════════════════════════════════════════════════════════════════
-
     /// Batch operations on multiple todos
     ///
     /// Subcommands: done, delete, priority
@@ -396,7 +393,6 @@ enum Commands {
     // ═══════════════════════════════════════════════════════════════════
     // HELP
     // ═══════════════════════════════════════════════════════════════════
-
     /// Show comprehensive help with examples and workflows
     ///
     /// More detailed than --help, includes:
@@ -498,7 +494,11 @@ async fn main() -> Result<()> {
         Commands::Gc { days, dry_run } => {
             commands::gc::run(days, dry_run).await?;
         }
-        Commands::Export { output, format, include_completed } => {
+        Commands::Export {
+            output,
+            format,
+            include_completed,
+        } => {
             commands::export::run(output, format, include_completed).await?;
         }
         Commands::Import { input, mode } => {

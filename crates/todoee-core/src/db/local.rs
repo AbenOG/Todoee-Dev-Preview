@@ -8,8 +8,8 @@ use std::str::FromStr;
 
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
-use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions};
 use sqlx::FromRow;
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions};
 use uuid::Uuid;
 
 use crate::models::{Category, EntityType, Operation, OperationType, Priority, SyncStatus, Todo};
@@ -189,8 +189,7 @@ impl LocalDb {
     }
     /// Create an in-memory database for testing.
     pub async fn new_in_memory() -> Result<Self> {
-        let options = SqliteConnectOptions::from_str(":memory:")?
-            .create_if_missing(true);
+        let options = SqliteConnectOptions::from_str(":memory:")?.create_if_missing(true);
 
         let pool = SqlitePoolOptions::new()
             .max_connections(1)
@@ -289,10 +288,12 @@ impl LocalDb {
         .await
         .context("Failed to create operations table")?;
 
-        sqlx::query("CREATE INDEX IF NOT EXISTS idx_operations_created_at ON operations(created_at DESC)")
-            .execute(&self.pool)
-            .await
-            .context("Failed to create operations created_at index")?;
+        sqlx::query(
+            "CREATE INDEX IF NOT EXISTS idx_operations_created_at ON operations(created_at DESC)",
+        )
+        .execute(&self.pool)
+        .await
+        .context("Failed to create operations created_at index")?;
 
         // Create stash table for temporarily storing todos
         sqlx::query(
@@ -375,13 +376,11 @@ impl LocalDb {
 
     /// Get a todo by its ID.
     pub async fn get_todo(&self, id: Uuid) -> Result<Option<Todo>> {
-        let row: Option<TodoRow> = sqlx::query_as(
-            "SELECT * FROM todos WHERE id = ?1",
-        )
-        .bind(id.to_string())
-        .fetch_optional(&self.pool)
-        .await
-        .context("Failed to fetch todo")?;
+        let row: Option<TodoRow> = sqlx::query_as("SELECT * FROM todos WHERE id = ?1")
+            .bind(id.to_string())
+            .fetch_optional(&self.pool)
+            .await
+            .context("Failed to fetch todo")?;
 
         row.map(|r| r.try_into()).transpose()
     }
@@ -407,8 +406,12 @@ impl LocalDb {
     pub async fn list_todos_due_today(&self) -> Result<Vec<Todo>> {
         let today = Utc::now().date_naive();
         // SAFETY: 0:0:0 and 23:59:59 are always valid times
-        let start = today.and_hms_opt(0, 0, 0).expect("midnight is always a valid time");
-        let end = today.and_hms_opt(23, 59, 59).expect("23:59:59 is always a valid time");
+        let start = today
+            .and_hms_opt(0, 0, 0)
+            .expect("midnight is always a valid time");
+        let end = today
+            .and_hms_opt(23, 59, 59)
+            .expect("23:59:59 is always a valid time");
 
         let start_str = DateTime::<Utc>::from_naive_utc_and_offset(start, Utc).to_rfc3339();
         let end_str = DateTime::<Utc>::from_naive_utc_and_offset(end, Utc).to_rfc3339();
@@ -427,13 +430,12 @@ impl LocalDb {
 
     /// List all todos in a specific category.
     pub async fn list_todos_by_category(&self, category_id: Uuid) -> Result<Vec<Todo>> {
-        let rows: Vec<TodoRow> = sqlx::query_as(
-            "SELECT * FROM todos WHERE category_id = ?1 ORDER BY created_at DESC",
-        )
-        .bind(category_id.to_string())
-        .fetch_all(&self.pool)
-        .await
-        .context("Failed to list todos by category")?;
+        let rows: Vec<TodoRow> =
+            sqlx::query_as("SELECT * FROM todos WHERE category_id = ?1 ORDER BY created_at DESC")
+                .bind(category_id.to_string())
+                .fetch_all(&self.pool)
+                .await
+                .context("Failed to list todos by category")?;
 
         rows.into_iter().map(|r| r.try_into()).collect()
     }
@@ -558,25 +560,21 @@ impl LocalDb {
 
     /// Get a category by its name.
     pub async fn get_category_by_name(&self, name: &str) -> Result<Option<Category>> {
-        let row: Option<CategoryRow> = sqlx::query_as(
-            "SELECT * FROM categories WHERE name = ?1",
-        )
-        .bind(name)
-        .fetch_optional(&self.pool)
-        .await
-        .context("Failed to fetch category by name")?;
+        let row: Option<CategoryRow> = sqlx::query_as("SELECT * FROM categories WHERE name = ?1")
+            .bind(name)
+            .fetch_optional(&self.pool)
+            .await
+            .context("Failed to fetch category by name")?;
 
         row.map(|r| r.try_into()).transpose()
     }
 
     /// List all categories.
     pub async fn list_categories(&self) -> Result<Vec<Category>> {
-        let rows: Vec<CategoryRow> = sqlx::query_as(
-            "SELECT * FROM categories ORDER BY name ASC",
-        )
-        .fetch_all(&self.pool)
-        .await
-        .context("Failed to list categories")?;
+        let rows: Vec<CategoryRow> = sqlx::query_as("SELECT * FROM categories ORDER BY name ASC")
+            .fetch_all(&self.pool)
+            .await
+            .context("Failed to list categories")?;
 
         rows.into_iter().map(|r| r.try_into()).collect()
     }
@@ -702,13 +700,12 @@ impl LocalDb {
 
     /// List recent operations, limited by count.
     pub async fn list_operations(&self, limit: usize) -> Result<Vec<Operation>> {
-        let rows: Vec<OperationRow> = sqlx::query_as(
-            "SELECT * FROM operations ORDER BY created_at DESC LIMIT ?1",
-        )
-        .bind(limit as i64)
-        .fetch_all(&self.pool)
-        .await
-        .context("Failed to list operations")?;
+        let rows: Vec<OperationRow> =
+            sqlx::query_as("SELECT * FROM operations ORDER BY created_at DESC LIMIT ?1")
+                .bind(limit as i64)
+                .fetch_all(&self.pool)
+                .await
+                .context("Failed to list operations")?;
 
         rows.into_iter().map(|r| r.try_into()).collect()
     }
@@ -742,7 +739,11 @@ impl LocalDb {
     // ==================== Head/Tail/Upcoming/Overdue Queries ====================
 
     /// List N most recently created todos.
-    pub async fn list_todos_head(&self, limit: usize, include_completed: bool) -> Result<Vec<Todo>> {
+    pub async fn list_todos_head(
+        &self,
+        limit: usize,
+        include_completed: bool,
+    ) -> Result<Vec<Todo>> {
         let query = if include_completed {
             "SELECT * FROM todos ORDER BY created_at DESC LIMIT ?1"
         } else {
@@ -759,7 +760,11 @@ impl LocalDb {
     }
 
     /// List N oldest todos.
-    pub async fn list_todos_tail(&self, limit: usize, include_completed: bool) -> Result<Vec<Todo>> {
+    pub async fn list_todos_tail(
+        &self,
+        limit: usize,
+        include_completed: bool,
+    ) -> Result<Vec<Todo>> {
         let query = if include_completed {
             "SELECT * FROM todos ORDER BY created_at ASC LIMIT ?1"
         } else {
@@ -846,13 +851,12 @@ impl LocalDb {
     /// Returns error if todo doesn't exist or is already stashed.
     pub async fn stash_todo(&self, todo_id: Uuid, message: Option<&str>) -> Result<Todo> {
         // Check if already stashed
-        let already_stashed: Option<(String,)> = sqlx::query_as(
-            "SELECT id FROM stash WHERE id = ?"
-        )
-            .bind(todo_id.to_string())
-            .fetch_optional(&self.pool)
-            .await
-            .context("Failed to check stash")?;
+        let already_stashed: Option<(String,)> =
+            sqlx::query_as("SELECT id FROM stash WHERE id = ?")
+                .bind(todo_id.to_string())
+                .fetch_optional(&self.pool)
+                .await
+                .context("Failed to check stash")?;
 
         if already_stashed.is_some() {
             anyhow::bail!("Todo is already stashed");
@@ -957,12 +961,10 @@ impl LocalDb {
 
     /// List all deleted todo IDs that haven't been synced to remote yet.
     pub async fn list_unsynced_deletions(&self) -> Result<Vec<Uuid>> {
-        let rows: Vec<(String,)> = sqlx::query_as(
-            "SELECT id FROM deleted_todos WHERE synced = 0",
-        )
-        .fetch_all(&self.pool)
-        .await
-        .context("Failed to list unsynced deletions")?;
+        let rows: Vec<(String,)> = sqlx::query_as("SELECT id FROM deleted_todos WHERE synced = 0")
+            .fetch_all(&self.pool)
+            .await
+            .context("Failed to list unsynced deletions")?;
 
         rows.into_iter()
             .map(|(id,)| Uuid::parse_str(&id).context("Invalid UUID in deleted_todos"))
@@ -982,13 +984,11 @@ impl LocalDb {
 
     /// Check if a todo was locally deleted (to skip re-downloading).
     pub async fn is_locally_deleted(&self, id: Uuid) -> Result<bool> {
-        let result: Option<(i32,)> = sqlx::query_as(
-            "SELECT 1 FROM deleted_todos WHERE id = ?",
-        )
-        .bind(id.to_string())
-        .fetch_optional(&self.pool)
-        .await
-        .context("Failed to check if locally deleted")?;
+        let result: Option<(i32,)> = sqlx::query_as("SELECT 1 FROM deleted_todos WHERE id = ?")
+            .bind(id.to_string())
+            .fetch_optional(&self.pool)
+            .await
+            .context("Failed to check if locally deleted")?;
 
         Ok(result.is_some())
     }
@@ -1184,10 +1184,12 @@ mod tests {
         let db = setup_db().await;
 
         // Table should exist after migrations
-        let result = sqlx::query("SELECT name FROM sqlite_master WHERE type='table' AND name='deleted_todos'")
-            .fetch_optional(db.pool())
-            .await
-            .unwrap();
+        let result = sqlx::query(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='deleted_todos'",
+        )
+        .fetch_optional(db.pool())
+        .await
+        .unwrap();
 
         assert!(result.is_some(), "deleted_todos table should exist");
     }

@@ -4,11 +4,11 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use todoee_core::{EntityType, Operation, OperationType, Priority};
 use tui_input::backend::crossterm::EventHandler as InputHandler;
 
+#[allow(unused_imports)]
+use super::app::InsightsData;
 use super::app::{
     AddField, AddState, App, EditField, EditState, Mode, SettingsSection, SortBy, SortOrder, View,
 };
-#[allow(unused_imports)]
-use super::app::InsightsData;
 use todoee_core::Config;
 
 /// Handle key events and update app state
@@ -30,22 +30,20 @@ pub async fn handle_key_event(app: &mut App, key: KeyEvent) -> Result<()> {
             app.mode = Mode::Normal;
             app.insights_data = None;
         }
-        Mode::Focus => {
-            match key.code {
-                KeyCode::Char(' ') => {
-                    if let Some(ref mut state) = app.focus_state {
-                        state.toggle_pause();
-                    }
+        Mode::Focus => match key.code {
+            KeyCode::Char(' ') => {
+                if let Some(ref mut state) = app.focus_state {
+                    state.toggle_pause();
                 }
-                KeyCode::Char('q') | KeyCode::Esc => {
-                    app.cancel_focus();
-                }
-                KeyCode::Enter => {
-                    app.complete_focus();
-                }
-                _ => {}
             }
-        }
+            KeyCode::Char('q') | KeyCode::Esc => {
+                app.cancel_focus();
+            }
+            KeyCode::Enter => {
+                app.complete_focus();
+            }
+            _ => {}
+        },
     }
 
     Ok(())
@@ -131,7 +129,8 @@ async fn handle_todos_view(app: &mut App, key: KeyEvent) -> Result<()> {
         KeyCode::Char('e') => {
             if let Some(todo) = app.selected_todo() {
                 if todo.is_completed {
-                    app.status_message = Some("Cannot edit completed todo (uncomplete first)".to_string());
+                    app.status_message =
+                        Some("Cannot edit completed todo (uncomplete first)".to_string());
                 } else {
                     app.edit_state = Some(EditState::from_todo(todo, &app.categories));
                     app.mode = Mode::EditingFull;

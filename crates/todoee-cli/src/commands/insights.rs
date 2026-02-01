@@ -59,9 +59,7 @@ pub async fn run(days: Option<i64>) -> Result<()> {
         .iter()
         .filter(|op| op.operation_type == OperationType::Complete)
     {
-        let days_ago = Utc::now()
-            .signed_duration_since(op.created_at)
-            .num_days() as usize;
+        let days_ago = Utc::now().signed_duration_since(op.created_at).num_days() as usize;
         if days_ago < 28 {
             let week = days_ago / 7;
             let local = Local.from_utc_datetime(&op.created_at.naive_utc());
@@ -73,16 +71,12 @@ pub async fn run(days: Option<i64>) -> Result<()> {
     }
 
     // Print report
-    println!(
-        "\x1b[1m┌─────────────────────────────────────────────────────────┐\x1b[0m"
-    );
+    println!("\x1b[1m┌─────────────────────────────────────────────────────────┐\x1b[0m");
     println!(
         "\x1b[1m│            PRODUCTIVITY INSIGHTS ({:>2} days)              │\x1b[0m",
         days
     );
-    println!(
-        "\x1b[1m└─────────────────────────────────────────────────────────┘\x1b[0m\n"
-    );
+    println!("\x1b[1m└─────────────────────────────────────────────────────────┘\x1b[0m\n");
 
     println!("  Tasks Created:    {}", total_created);
     println!("  Tasks Completed:  {}", total_completed);
