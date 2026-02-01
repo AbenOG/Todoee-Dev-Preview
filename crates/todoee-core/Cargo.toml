@@ -18,6 +18,7 @@ argon2 = "0.5"
 jsonwebtoken = "9"
 toml = "0.8"
 dirs = "6"
+zeroize = { version = "1.8", features = ["derive"] }
 
 [dev-dependencies]
 tokio-test = "0.4"

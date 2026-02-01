@@ -6,6 +6,7 @@
 use chrono::{DateTime, Utc};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use zeroize::ZeroizeOnDrop;
 
 use crate::config::Config;
 use crate::error::TodoeeError;
@@ -121,9 +122,15 @@ struct Choice {
 // ============================================================================
 
 /// Client for communicating with OpenRouter AI API
+///
+/// The api_key field is automatically zeroed when the struct is dropped
+/// to prevent sensitive data from remaining in memory.
+#[derive(ZeroizeOnDrop)]
 pub struct AiClient {
+    #[zeroize(skip)]
     client: Client,
     api_key: String,
+    #[zeroize(skip)]
     model: String,
 }
 
