@@ -514,6 +514,9 @@ impl LocalDb {
 
     /// Delete a todo by its ID.
     pub async fn delete_todo(&self, id: Uuid) -> Result<()> {
+        // Record deletion for sync tracking BEFORE deleting
+        self.record_deleted_todo(id).await?;
+
         sqlx::query("DELETE FROM todos WHERE id = ?1")
             .bind(id.to_string())
             .execute(&self.pool)
@@ -1245,5 +1248,21 @@ mod tests {
 
         assert!(db.is_locally_deleted(deleted_id).await.unwrap());
         assert!(!db.is_locally_deleted(not_deleted_id).await.unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_delete_todo_records_deletion() {
+        let db = setup_db().await;
+
+        // Create a todo
+        let user_id = Uuid::new_v4();
+        let todo = Todo::new("Test todo".to_string(), Some(user_id));
+        db.create_todo(&todo).await.unwrap();
+
+        // Delete it
+        db.delete_todo(todo.id).await.unwrap();
+
+        // Should be recorded in deleted_todos
+        assert!(db.is_locally_deleted(todo.id).await.unwrap());
     }
 }
