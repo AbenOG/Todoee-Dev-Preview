@@ -125,6 +125,25 @@ impl SyncService {
             result.uploaded += 1;
         }
 
+        // 2.5. Upload local deletions to remote
+        let deleted_ids = self.local.list_unsynced_deletions().await.map_err(|e| {
+            TodoeeError::Database(sqlx::Error::Protocol(format!(
+                "Failed to list unsynced deletions: {}", e
+            )))
+        })?;
+
+        for id in deleted_ids {
+            // Soft-delete in remote (ignore errors if already deleted or doesn't exist)
+            if let Err(e) = remote.soft_delete_todo(id).await {
+                eprintln!("Warning: Failed to sync deletion for {}: {}", id, e);
+            }
+            self.local.mark_deletion_synced(id).await.map_err(|e| {
+                TodoeeError::Database(sqlx::Error::Protocol(format!(
+                    "Failed to mark deletion synced: {}", e
+                )))
+            })?;
+        }
+
         // 3. Download remote changes
         let last_sync = self.get_last_sync_time().await;
         let remote_changes = remote.get_todos_since(last_sync).await?;
