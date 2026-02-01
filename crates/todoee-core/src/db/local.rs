@@ -406,8 +406,9 @@ impl LocalDb {
     /// List all todos due today.
     pub async fn list_todos_due_today(&self) -> Result<Vec<Todo>> {
         let today = Utc::now().date_naive();
-        let start = today.and_hms_opt(0, 0, 0).unwrap();
-        let end = today.and_hms_opt(23, 59, 59).unwrap();
+        // SAFETY: 0:0:0 and 23:59:59 are always valid times
+        let start = today.and_hms_opt(0, 0, 0).expect("midnight is always a valid time");
+        let end = today.and_hms_opt(23, 59, 59).expect("23:59:59 is always a valid time");
 
         let start_str = DateTime::<Utc>::from_naive_utc_and_offset(start, Utc).to_rfc3339();
         let end_str = DateTime::<Utc>::from_naive_utc_and_offset(end, Utc).to_rfc3339();
