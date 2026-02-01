@@ -134,8 +134,8 @@ impl SyncService {
 
         for id in deleted_ids {
             // Soft-delete in remote (ignore errors if already deleted or doesn't exist)
-            if let Err(e) = remote.soft_delete_todo(id).await {
-                eprintln!("Warning: Failed to sync deletion for {}: {}", id, e);
+            if let Err(_e) = remote.soft_delete_todo(id).await {
+                tracing::warn!(todo_id = %id, "Failed to sync deletion to remote");
             }
             self.local.mark_deletion_synced(id).await.map_err(|e| {
                 TodoeeError::Database(sqlx::Error::Protocol(format!(
@@ -188,9 +188,9 @@ impl SyncService {
                     })?;
                     result.downloaded += 1;
                 }
-                Err(e) => {
+                Err(_e) => {
                     // Log error but continue syncing other todos
-                    eprintln!("Warning: Failed to get local todo {}: {}", remote_todo.id, e);
+                    tracing::warn!(todo_id = %remote_todo.id, "Failed to fetch local todo during sync");
                 }
             }
         }
