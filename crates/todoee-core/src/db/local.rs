@@ -927,6 +927,21 @@ impl LocalDb {
             .context("Failed to clear stash")?;
         Ok(result.rows_affected())
     }
+
+    // ==================== Deleted Todo Tracking ====================
+
+    /// Record a todo deletion for sync tracking.
+    pub async fn record_deleted_todo(&self, id: Uuid) -> Result<()> {
+        sqlx::query(
+            "INSERT OR REPLACE INTO deleted_todos (id, deleted_at, synced) VALUES (?, datetime('now'), 0)",
+        )
+        .bind(id.to_string())
+        .execute(&self.pool)
+        .await
+        .context("Failed to record deleted todo")?;
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -1125,5 +1140,24 @@ mod tests {
             .unwrap();
 
         assert!(result.is_some(), "deleted_todos table should exist");
+    }
+
+    #[tokio::test]
+    async fn test_record_deleted_todo() {
+        let db = setup_db().await;
+
+        let todo_id = Uuid::new_v4();
+        db.record_deleted_todo(todo_id).await.unwrap();
+
+        // Verify it was recorded
+        let row = sqlx::query("SELECT id, synced FROM deleted_todos WHERE id = ?")
+            .bind(todo_id.to_string())
+            .fetch_one(db.pool())
+            .await
+            .unwrap();
+
+        use sqlx::Row;
+        let synced: i32 = row.get("synced");
+        assert_eq!(synced, 0, "Should be unsynced initially");
     }
 }
