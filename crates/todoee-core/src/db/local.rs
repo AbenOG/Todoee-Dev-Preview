@@ -895,6 +895,14 @@ impl LocalDb {
                 .context("Failed to delete from stash")?;
 
             self.create_todo(&todo).await?;
+
+            // Clear deletion record since we're restoring the todo
+            sqlx::query("DELETE FROM deleted_todos WHERE id = ?")
+                .bind(todo.id.to_string())
+                .execute(&self.pool)
+                .await
+                .context("Failed to clear deletion record for restored todo")?;
+
             Ok(Some(todo))
         } else {
             Ok(None)
