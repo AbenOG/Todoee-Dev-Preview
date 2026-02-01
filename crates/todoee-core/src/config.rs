@@ -148,8 +148,22 @@ impl Config {
     }
 
     /// Returns the local database path (~/.config/todoee/cache.db)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database name contains path traversal sequences.
     pub fn local_db_path(&self) -> Result<PathBuf> {
-        Ok(Self::config_dir()?.join(&self.database.local_db_name))
+        let db_name = &self.database.local_db_name;
+
+        // Reject path traversal attempts
+        if db_name.contains("..") || db_name.contains('/') || db_name.contains('\\') {
+            anyhow::bail!(
+                "Invalid database name '{}': must be a simple filename without path separators",
+                db_name
+            );
+        }
+
+        Ok(Self::config_dir()?.join(db_name))
     }
 
     /// Returns the authentication file path (~/.config/todoee/auth.json)
@@ -393,5 +407,17 @@ advance_minutes = 60
         assert_eq!(result.unwrap(), "postgres://localhost/test");
         // SAFETY: This is a single-threaded test
         unsafe { env::remove_var("TEST_DB_URL_SET") };
+    }
+
+    #[test]
+    fn test_local_db_path_rejects_path_traversal() {
+        let mut config = Config::default();
+        config.database.local_db_name = "../../../etc/passwd".to_string();
+        let result = config.local_db_path();
+        assert!(result.is_err(), "Should reject path traversal");
+
+        config.database.local_db_name = "..\\..\\windows\\system32".to_string();
+        let result = config.local_db_path();
+        assert!(result.is_err(), "Should reject Windows path traversal");
     }
 }
