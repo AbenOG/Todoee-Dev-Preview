@@ -228,6 +228,12 @@ export NEON_DATABASE_URL="postgres://user:pass@host/db"
 todoee sync                      # Sync with cloud
 ```
 
+Sync features:
+- **Bi-directional**: Upload local changes, download remote changes
+- **Categories first**: Categories sync before todos (foreign key safety)
+- **Delete propagation**: Local deletes sync to cloud and won't re-download
+- **Conflict resolution**: Last-write-wins based on timestamps
+
 #### Daemon & Reminders
 
 ```bash
@@ -379,7 +385,7 @@ This is a **development preview**. The core functionality is working, but some f
 - UI animations and loading indicators
 - Local SQLite database
 - Import/Export (JSON and CSV)
-- Cloud Sync (Neon Postgres)
+- Cloud Sync (Neon Postgres) with delete propagation
 - Daemon Service (background reminders)
 - Notifications (desktop alerts)
 
