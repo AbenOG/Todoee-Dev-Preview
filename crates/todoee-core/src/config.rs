@@ -7,6 +7,8 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 
 /// Main application configuration
@@ -186,7 +188,10 @@ impl Config {
         }
     }
 
-    /// Save configuration to file, creating the directory if needed
+    /// Save configuration to file, creating the directory if needed.
+    ///
+    /// On Unix systems, the config file is created with mode 0600 (owner read/write only)
+    /// to protect potentially sensitive configuration like API key environment variable names.
     pub fn save(&self) -> Result<()> {
         let config_dir = Self::config_dir()?;
         let config_path = Self::config_path()?;
@@ -195,13 +200,29 @@ impl Config {
         if !config_dir.exists() {
             fs::create_dir_all(&config_dir)
                 .with_context(|| format!("Failed to create config directory: {}", config_dir.display()))?;
+
+            // Set directory permissions to 0700 on Unix
+            #[cfg(unix)]
+            {
+                let dir_perms = std::fs::Permissions::from_mode(0o700);
+                fs::set_permissions(&config_dir, dir_perms)
+                    .with_context(|| format!("Failed to set permissions on config directory: {}", config_dir.display()))?;
+            }
         }
 
         let content = toml::to_string_pretty(self)
             .context("Failed to serialize config to TOML")?;
 
-        fs::write(&config_path, content)
+        fs::write(&config_path, &content)
             .with_context(|| format!("Failed to write config file: {}", config_path.display()))?;
+
+        // Set file permissions to 0600 on Unix (owner read/write only)
+        #[cfg(unix)]
+        {
+            let file_perms = std::fs::Permissions::from_mode(0o600);
+            fs::set_permissions(&config_path, file_perms)
+                .with_context(|| format!("Failed to set permissions on config file: {}", config_path.display()))?;
+        }
 
         Ok(())
     }
