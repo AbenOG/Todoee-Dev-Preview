@@ -90,7 +90,23 @@ impl SyncService {
 
         let mut result = SyncResult::default();
 
-        // 1. Upload local changes (pending sync items)
+        // 1. Upload pending categories FIRST (before todos that reference them)
+        let pending_categories = self.local.list_pending_categories().await.map_err(|e| {
+            TodoeeError::Database(sqlx::Error::Protocol(format!(
+                "Failed to list pending categories: {}", e
+            )))
+        })?;
+
+        for category in pending_categories {
+            remote.upsert_category(&category, chrono::Utc::now()).await?;
+            self.local.mark_category_synced(category.id).await.map_err(|e| {
+                TodoeeError::Database(sqlx::Error::Protocol(format!(
+                    "Failed to mark category synced: {}", e
+                )))
+            })?;
+        }
+
+        // 2. Upload local todo changes (existing code continues...)
         let pending = self.local.list_pending_sync().await.map_err(|e| {
             TodoeeError::Database(sqlx::Error::Protocol(format!(
                 "Failed to list pending sync: {}",
@@ -109,7 +125,7 @@ impl SyncService {
             result.uploaded += 1;
         }
 
-        // 2. Download remote changes
+        // 3. Download remote changes
         let last_sync = self.get_last_sync_time().await;
         let remote_changes = remote.get_todos_since(last_sync).await?;
 
