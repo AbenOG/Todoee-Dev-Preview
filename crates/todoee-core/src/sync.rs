@@ -168,6 +168,15 @@ impl SyncService {
                     }
                 }
                 Ok(None) => {
+                    // Check if this was locally deleted - if so, skip re-downloading
+                    let is_deleted = self.local.is_locally_deleted(remote_todo.id).await
+                        .unwrap_or(false);
+
+                    if is_deleted {
+                        // Skip - this was intentionally deleted locally
+                        continue;
+                    }
+
                     // New remote todo - download it
                     let mut new_todo = remote_todo.clone();
                     new_todo.sync_status = SyncStatus::Synced;
