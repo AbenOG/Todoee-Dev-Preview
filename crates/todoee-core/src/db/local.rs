@@ -182,6 +182,11 @@ pub struct LocalDb {
 }
 
 impl LocalDb {
+    /// Get a reference to the connection pool (for testing).
+    #[cfg(test)]
+    pub fn pool(&self) -> &SqlitePool {
+        &self.pool
+    }
     /// Create an in-memory database for testing.
     pub async fn new_in_memory() -> Result<Self> {
         let options = SqliteConnectOptions::from_str(":memory:")?
@@ -303,6 +308,20 @@ impl LocalDb {
         .execute(&self.pool)
         .await
         .context("Failed to create stash table")?;
+
+        // Create deleted_todos tracking table for sync
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS deleted_todos (
+                id TEXT PRIMARY KEY,
+                deleted_at TEXT NOT NULL,
+                synced INTEGER NOT NULL DEFAULT 0
+            )
+            "#,
+        )
+        .execute(&self.pool)
+        .await
+        .context("Failed to create deleted_todos table")?;
 
         Ok(())
     }
@@ -1093,5 +1112,18 @@ mod tests {
 
         let pending = db.list_pending_categories().await.unwrap();
         assert_eq!(pending.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_deleted_todos_table_exists() {
+        let db = setup_db().await;
+
+        // Table should exist after migrations
+        let result = sqlx::query("SELECT name FROM sqlite_master WHERE type='table' AND name='deleted_todos'")
+            .fetch_optional(db.pool())
+            .await
+            .unwrap();
+
+        assert!(result.is_some(), "deleted_todos table should exist");
     }
 }
