@@ -967,6 +967,19 @@ impl LocalDb {
 
         Ok(())
     }
+
+    /// Check if a todo was locally deleted (to skip re-downloading).
+    pub async fn is_locally_deleted(&self, id: Uuid) -> Result<bool> {
+        let result: Option<(i32,)> = sqlx::query_as(
+            "SELECT 1 FROM deleted_todos WHERE id = ?",
+        )
+        .bind(id.to_string())
+        .fetch_optional(&self.pool)
+        .await
+        .context("Failed to check if locally deleted")?;
+
+        Ok(result.is_some())
+    }
 }
 
 #[cfg(test)]
@@ -1219,5 +1232,18 @@ mod tests {
         // Should no longer be in unsynced list
         let unsynced = db.list_unsynced_deletions().await.unwrap();
         assert_eq!(unsynced.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_is_locally_deleted() {
+        let db = setup_db().await;
+
+        let deleted_id = Uuid::new_v4();
+        let not_deleted_id = Uuid::new_v4();
+
+        db.record_deleted_todo(deleted_id).await.unwrap();
+
+        assert!(db.is_locally_deleted(deleted_id).await.unwrap());
+        assert!(!db.is_locally_deleted(not_deleted_id).await.unwrap());
     }
 }
