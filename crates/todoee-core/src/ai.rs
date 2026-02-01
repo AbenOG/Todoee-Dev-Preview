@@ -3,6 +3,8 @@
 //! This module provides an AI client that communicates with OpenRouter's API
 //! to parse natural language input into structured task data.
 
+use std::time::Duration;
+
 use chrono::{DateTime, Utc};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -156,7 +158,12 @@ impl AiClient {
             })?;
 
         Ok(Self {
-            client: Client::new(),
+            client: Client::builder()
+                .timeout(Duration::from_secs(30))
+                .build()
+                .map_err(|e| TodoeeError::AiService {
+                    message: format!("Failed to build HTTP client: {}", e),
+                })?,
             api_key,
             model,
         })
