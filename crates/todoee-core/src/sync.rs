@@ -204,7 +204,8 @@ impl SyncService {
     /// In production, this would be stored in a metadata table.
     async fn get_last_sync_time(&self) -> DateTime<Utc> {
         // Return epoch to sync all changes. In production, store in metadata table.
-        DateTime::from_timestamp(0, 0).unwrap()
+        // SAFETY: timestamp(0, 0) is always valid (Unix epoch)
+        DateTime::from_timestamp(0, 0).expect("Unix epoch timestamp is always valid")
     }
 }
 
