@@ -310,6 +310,35 @@ The AI parses natural language for:
 | Config | `~/.config/todoee/config.toml` |
 | Database | `~/.local/share/todoee/todoee.db` |
 
+## Security
+
+Todoee implements security best practices to protect your data:
+
+### Memory Safety
+
+- **API Key Zeroing** - API keys are securely zeroed from memory when the AI client is dropped, preventing exposure via memory dumps or core dumps
+- **No Unsafe Code** - Tests use thread-safe environment variable handling via `temp-env` crate
+
+### Input Validation
+
+- **Path Traversal Protection** - Database names are validated to prevent directory traversal attacks (e.g., `../../../etc/passwd`)
+- **Input Length Limits** - Task descriptions are limited to 10,000 characters to prevent DoS attacks
+
+### File System Security
+
+- **Restrictive Permissions** - Config directory is created with mode `0700` and config file with mode `0600` (Unix), preventing other users from reading your configuration
+
+### Network Security
+
+- **Request Timeouts** - AI API requests have a 30-second timeout to prevent indefinite hangs
+- **Sanitized Error Messages** - Database errors are logged via structured tracing, not exposed to stdout/stderr
+
+### Best Practices
+
+- Store API keys in environment variables, not in config files
+- Use a dedicated API key with minimal permissions for AI features
+- Keep your system updated with latest security patches
+
 ## UI Animations
 
 Todoee features polished UI animations for a smooth experience:
