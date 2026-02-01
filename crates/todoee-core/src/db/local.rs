@@ -942,6 +942,20 @@ impl LocalDb {
 
         Ok(())
     }
+
+    /// List all deleted todo IDs that haven't been synced to remote yet.
+    pub async fn list_unsynced_deletions(&self) -> Result<Vec<Uuid>> {
+        let rows: Vec<(String,)> = sqlx::query_as(
+            "SELECT id FROM deleted_todos WHERE synced = 0",
+        )
+        .fetch_all(&self.pool)
+        .await
+        .context("Failed to list unsynced deletions")?;
+
+        rows.into_iter()
+            .map(|(id,)| Uuid::parse_str(&id).context("Invalid UUID in deleted_todos"))
+            .collect()
+    }
 }
 
 #[cfg(test)]
@@ -1159,5 +1173,21 @@ mod tests {
         use sqlx::Row;
         let synced: i32 = row.get("synced");
         assert_eq!(synced, 0, "Should be unsynced initially");
+    }
+
+    #[tokio::test]
+    async fn test_list_unsynced_deletions() {
+        let db = setup_db().await;
+
+        // Record two deletions
+        let id1 = Uuid::new_v4();
+        let id2 = Uuid::new_v4();
+        db.record_deleted_todo(id1).await.unwrap();
+        db.record_deleted_todo(id2).await.unwrap();
+
+        let unsynced = db.list_unsynced_deletions().await.unwrap();
+        assert_eq!(unsynced.len(), 2);
+        assert!(unsynced.contains(&id1));
+        assert!(unsynced.contains(&id2));
     }
 }
