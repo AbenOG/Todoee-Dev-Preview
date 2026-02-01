@@ -4,7 +4,8 @@
 //! query functionality work correctly together.
 
 use tempfile::TempDir;
-use todoee_core::{LocalDb, Todo};
+use todoee_core::{LocalDb, SyncStatus, Todo};
+use uuid::Uuid;
 
 #[tokio::test]
 async fn test_full_workflow() {
@@ -37,4 +38,28 @@ async fn test_full_workflow() {
         .unwrap();
     assert_eq!(reminders.len(), 1);
     assert_eq!(reminders[0].title, "Integration test task");
+}
+
+#[tokio::test]
+async fn test_delete_does_not_redownload() {
+    let temp_dir = TempDir::new().unwrap();
+    let db_path = temp_dir.path().join("test.db");
+    let local_db = LocalDb::new(&db_path).await.unwrap();
+    local_db.run_migrations().await.unwrap();
+
+    // Create and "sync" a todo (simulate it came from cloud)
+    let user_id = Uuid::new_v4();
+    let mut todo = Todo::new("Cloud todo".to_string(), Some(user_id));
+    todo.sync_status = SyncStatus::Synced;
+    local_db.create_todo(&todo).await.unwrap();
+
+    // Delete it locally
+    local_db.delete_todo(todo.id).await.unwrap();
+
+    // Verify it's tracked as deleted
+    assert!(local_db.is_locally_deleted(todo.id).await.unwrap());
+
+    // Verify it won't be in pending sync (it's deleted)
+    let pending = local_db.list_pending_sync().await.unwrap();
+    assert!(!pending.iter().any(|t| t.id == todo.id));
 }
