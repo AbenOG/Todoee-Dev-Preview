@@ -956,6 +956,17 @@ impl LocalDb {
             .map(|(id,)| Uuid::parse_str(&id).context("Invalid UUID in deleted_todos"))
             .collect()
     }
+
+    /// Mark a deletion as synced to remote.
+    pub async fn mark_deletion_synced(&self, id: Uuid) -> Result<()> {
+        sqlx::query("UPDATE deleted_todos SET synced = 1 WHERE id = ?")
+            .bind(id.to_string())
+            .execute(&self.pool)
+            .await
+            .context("Failed to mark deletion synced")?;
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -1189,5 +1200,24 @@ mod tests {
         assert_eq!(unsynced.len(), 2);
         assert!(unsynced.contains(&id1));
         assert!(unsynced.contains(&id2));
+    }
+
+    #[tokio::test]
+    async fn test_mark_deletion_synced() {
+        let db = setup_db().await;
+
+        let id = Uuid::new_v4();
+        db.record_deleted_todo(id).await.unwrap();
+
+        // Should be unsynced
+        let unsynced = db.list_unsynced_deletions().await.unwrap();
+        assert_eq!(unsynced.len(), 1);
+
+        // Mark as synced
+        db.mark_deletion_synced(id).await.unwrap();
+
+        // Should no longer be in unsynced list
+        let unsynced = db.list_unsynced_deletions().await.unwrap();
+        assert_eq!(unsynced.len(), 0);
     }
 }
