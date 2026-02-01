@@ -15,9 +15,19 @@ pub async fn run(
     // Join description parts into a single string
     let description = description.join(" ");
 
-    // Validate description is not empty
+    // Validate input
     if description.trim().is_empty() {
         anyhow::bail!("Task description cannot be empty");
+    }
+
+    // Prevent DoS via extremely long descriptions
+    const MAX_DESCRIPTION_LEN: usize = 10000;
+    if description.len() > MAX_DESCRIPTION_LEN {
+        anyhow::bail!(
+            "Task description too long ({} chars). Maximum is {} characters.",
+            description.len(),
+            MAX_DESCRIPTION_LEN
+        );
     }
 
     // Load config and open local database
